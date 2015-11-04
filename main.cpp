@@ -10,6 +10,7 @@
 #include "window.h"
 #include "my_freetype.h"
 #include "grid_constellation.h"
+#include "BezierCamera.h"
 
 using namespace std;
 using namespace glm;
@@ -31,12 +32,15 @@ freetype::font_data our_font;
 Disc disc1(64, pi<float>() * 1.5f, 0.25f, 0.125f);
 Disc disc2(64, pi<float>() * 2.0f , 0.25f , 0.0f);
 Disc disc3(128 , pi<float>() * 1.5f , 1.0f , 0.0f);
+Disc ring(64, pi<float>() * 2.0f, 0.25f, 0.24f);
 Cylinder cylinder1(64, 8, pi<float>() * 2.0f, 1.0f, 1.0f);
 Cylinder cylinder2(64 , 8 , pi<float>() * 2.0f , 1.0f , 1.0f);
 Plane plane1(8 , 8);
 Plane plane2(2 , 2);
 Cube cube;
 GridConstellation gc;
+BezierCamera cam;
+BezierCamera cam2;
 
 vec3 eye(0.0f, 0.0f, 15.0f);
 vec3 cop(0.0f, 0.0f, 0.0f);
@@ -48,6 +52,8 @@ vector<ShaderInitializer> shaders;
 vector<Window> windows;
 vector<ILContainer> textures;
 vector<string> texture_file_names;
+
+bool displayBezier = false;
 
 inline void UpdateTime()
 {
@@ -218,7 +224,9 @@ void KeyboardFunc(unsigned char c, int x, int y)
 		case 'w':
 			window->wireframe = !window->wireframe;
 			break;
-
+		case 'b':
+			displayBezier = !displayBezier;
+			break;
 		case 'x':
 		case 27:
 			glutLeaveMainLoop();
@@ -377,14 +385,47 @@ void DisplayDisc()
 	glFrontFace(GL_CCW);
 	//glEnable(GL_CULL_FACE);
 	mat4 model_matrix = rotate(mat4() , radians(window->LocalTime() * 40.0f) , vec3(0.0f , 1.0f , 0.0f));
+	vec3* spline = cam.GetSpline();
+	vector<vec3> points = cam.GetTPoints();
+	vec3 lookat;
+	vec3 pos = cam.GetCameraPosition(lookat);
+
 	model_matrix = scale(model_matrix , vec3(3.0f , 3.0f , 3.0f));
-	mat4 view_matrix = lookAt(vec3(0.0f , 0.0f , 10.0f) , vec3(0.0f , 0.0f , 0.0f) , vec3(0.0f , 1.0f , 0.0f));
-	mat4 projection_matrix = perspective(radians(window->fovy) , window->aspect , window->near_distance , window->far_distance);
+	mat4 view_matrix = lookAt(pos, lookat, vec3(0.0f, 1.0f, 0.0f));
+	mat4 projection_matrix = perspective(radians(window->fovy) , window->aspect , .01f , window->far_distance);
 	phong_shader.Use(model_matrix , view_matrix , projection_matrix);
 	phong_shader.SetMaterial(diffuse , specular , 16.0f , ambient);
 	phong_shader.SetLightPosition(vec3(0.0f , 0.0f , 1000.0f));
 	disc3.Draw(false);
 	phong_shader.UnUse();
+	
+	
+	for (int i = 0; i < points.size(); i++)
+	{
+		vec3 displaySpline = points[i];
+		model_matrix = mat4();
+		model_matrix = translate(model_matrix, displaySpline);
+		phong_shader.Use(model_matrix, view_matrix, projection_matrix);
+		phong_shader.SetMaterial(diffuse, specular, 16.0f, ambient);
+		phong_shader.SetLightPosition(vec3(0.0f, 0.0f, 1000.0f));
+		if(displayBezier)
+			ring.Draw(false);
+		phong_shader.UnUse();
+	}
+
+	for (int i = 0; i < 4; i++)
+	{
+		vec3 displaySpline = spline[i];
+		model_matrix = mat4();
+		model_matrix = translate(model_matrix, displaySpline);
+		phong_shader.Use(model_matrix, view_matrix, projection_matrix);
+		phong_shader.SetMaterial(diffuse, specular, 16.0f, ambient);
+		phong_shader.SetLightPosition(vec3(0.0f, 0.0f, 1000.0f));
+		if(displayBezier)
+			ring.Draw(false);
+		phong_shader.UnUse();
+	}
+	//phong_shader.UnUse();
 	glutSwapBuffers();
 	disc3.UpdateValues(TestUpdateDisc , window->LocalTime(), nullptr);
 }
@@ -437,13 +478,43 @@ void DisplayGrid()
 	glFrontFace(GL_CW);
 
 	vector<Constellation::PositionData> & pd = gc.GetPositionData();
+	vec3* spline = cam2.GetSpline();
+	vector<vec3> points = cam.GetTPoints();
+	vec3 lookat;
+	vec3 pos = cam.GetCameraPosition(lookat);
+
 
 	mat4 s = scale(mat4() , vec3(50.0f , 50.0f , 1.0f));
-	mat4 view_matrix = lookAt(vec3(0.0f , 0.0f , 150.0f) , vec3(0.0f , 0.0f , 0.0f) , vec3(0.0f , 1.0f , 0.0f));
+	mat4 view_matrix = lookAt(pos, lookat, vec3(0.0f, 1.0f, 0.0f));
 	mat4 projection_matrix = perspective(radians(window->fovy) , window->aspect , window->near_distance , window->far_distance);
 
 	/*
 	*/
+	for (int i = 0; i < points.size(); i++)
+	{
+		vec3 displaySpline = points[i];
+		mat4 model_matrix = mat4();
+		model_matrix = translate(model_matrix, displaySpline);
+		phong_shader.Use(model_matrix, view_matrix, projection_matrix);
+		phong_shader.SetMaterial(diffuse, specular, 16.0f, ambient);
+		phong_shader.SetLightPosition(vec3(0.0f, 0.0f, 1000.0f));
+		if (displayBezier)
+			ring.Draw(false);
+		phong_shader.UnUse();
+	}
+
+	for (int i = 0; i < 4; i++)
+	{
+		vec3 displaySpline = spline[i];
+		mat4 model_matrix = mat4();
+		model_matrix = translate(model_matrix, displaySpline);
+		phong_shader.Use(model_matrix, view_matrix, projection_matrix);
+		phong_shader.SetMaterial(diffuse, specular, 16.0f, ambient);
+		phong_shader.SetLightPosition(vec3(0.0f, 0.0f, 1000.0f));
+		if (displayBezier)
+			ring.Draw(false);
+		phong_shader.UnUse();
+	}
 
 	for (vector<Constellation::PositionData>::iterator iter = pd.begin(); iter < pd.end(); iter++)
 	{
@@ -564,6 +635,8 @@ int main(int argc, char * argv[])
 {
 	srand(unsigned int(time(NULL)));
 	// glutInit must be the first thing to use OpenGL
+	//BezierCamera cam = BezierCamera();
+
 	glutInit(&argc, argv);
 	// Initializes the Develeoper's Imaging Library
 	ilInit();
@@ -589,16 +662,16 @@ int main(int argc, char * argv[])
 	windows.push_back(Window("Basic Shape Viewer" , nullptr , nullptr , nullptr , nullptr , ivec2(512 , 512) , 50.0f , 1.0f , 100.0f));
 	windows.push_back(Window("Cylinder" , DisplayCylinder , nullptr , nullptr , nullptr , ivec2(512 , 512) , 50.0f , 1.0f , 100.0f));
 	windows.push_back(Window("Plane" , DisplayPlane , nullptr , nullptr , nullptr , ivec2(512 , 512) , 50.0f , 1.0f , 100.0f));
-	windows.push_back(Window("Disc" , DisplayDisc , nullptr , nullptr , nullptr , ivec2(512 , 512) , 50.0f , 1.0f , 100.0f));
+	windows.push_back(Window("Disc" , DisplayDisc , nullptr , nullptr , nullptr , ivec2(512 , 512) , 50.0f , 1.0f , 400.0f));
 	windows.push_back(Window("Cube", DisplayCube, nullptr, nullptr, nullptr, ivec2(512, 512), 50.0f, 1.0f, 100.0f));
 	windows.push_back(Window("Grid" , DisplayGrid , nullptr , nullptr , nullptr , ivec2(512 , 512) , 50.0f , 1.0f , 400.0f));
 
 	InitializeWindows();
-	our_font.init("c:\\windows\\fonts\\Candarai.ttf" , 128);
-	texture_file_names.push_back("DSC_0337.jpg");
-	texture_file_names.push_back("DSC_0338.jpg");
-	texture_file_names.push_back("DSC_1233.jpg");
-	texture_file_names.push_back("DSC_1623.jpg");
+	//our_font.init("c:\\windows\\fonts\\Candarai.ttf" , 128);
+	//texture_file_names.push_back("DSC_0337.jpg");
+	//texture_file_names.push_back("DSC_0338.jpg");
+	//texture_file_names.push_back("DSC_1233.jpg");
+	//texture_file_names.push_back("DSC_1623.jpg");
 
 	textures.resize(texture_file_names.size());
 	for (size_t i = 0; i < texture_file_names.size(); i++)

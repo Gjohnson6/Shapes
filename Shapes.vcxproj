@@ -19,7 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{49AA5F09-BD33-487F-9627-0011C0B20145}</ProjectGuid>
+    <ProjectGuid>{7614EE55-0C04-442E-8C82-30275519BEDF}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>Shapes</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
@@ -156,6 +156,7 @@
     <Text Include="icosphere_reference.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BezierCamera.h" />
     <ClInclude Include="constant_shader.h" />
     <ClInclude Include="cylinder.h" />
     <ClInclude Include="disc.h" />
@@ -170,6 +171,7 @@
     <ClInclude Include="window.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="BezierCamera.cpp" />
     <ClCompile Include="constant_shader.cpp" />
     <ClCompile Include="cylinder.cpp" />
     <ClCompile Include="disc.cpp" />
