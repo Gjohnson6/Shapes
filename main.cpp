@@ -614,10 +614,10 @@ int main(int argc, char * argv[])
 	Window::InitializeWindows(windows , DisplayFunc , KeyboardFunc , CloseFunc, ReshapeFunc , IdleFunc);
 
 	our_font.init("c:\\windows\\fonts\\Candarai.ttf" , 128);
-	//texture_file_names.push_back("DSC_0337.jpg");
-	//texture_file_names.push_back("DSC_0338.jpg");
-	//texture_file_names.push_back("DSC_1233.jpg");
-	//texture_file_names.push_back("DSC_1623.jpg");
+	texture_file_names.push_back("DSC_0337.jpg");
+	texture_file_names.push_back("DSC_0338.jpg");
+	texture_file_names.push_back("DSC_1233.jpg");
+	texture_file_names.push_back("DSC_1623.jpg");
 
 	textures.resize(texture_file_names.size());
 	for (size_t i = 0; i < texture_file_names.size(); i++)
