@@ -11,6 +11,8 @@
 #include "window.h"
 #include "my_freetype.h"
 #include "grid_constellation.h"
+#include "BezierCamera.h"
+
 
 using namespace std;
 using namespace glm;
@@ -31,13 +33,16 @@ freetype::font_data our_font;
 
 Disc disc1(64, pi<float>() * 1.5f, 0.25f, 0.125f);
 Disc disc2(64, pi<float>() * 2.0f , 0.25f , 0.0f);
-Disc disc3(128, pi<float>() * 2.0f , 1.0f , 0.0f);
+Disc disc3(128, pi<float>() * 1.5f, 1.0f, 0.0f);
+Disc ring(64, pi<float>() * 2.0f, 0.25f, 0.24f);
 Cylinder cylinder1(32, 8, pi<float>() * 2.0f, 1.0f, 1.0f);
 Cylinder cylinder2(4 , 2 , pi<float>() * 2.0f , 1.0f , 0.5f);
 Plane plane1(8 , 8);
 Plane plane2(64 , 64);
 Cube cube;
 GridConstellation gc;
+BezierCamera cam;
+BezierCamera cam2;
 
 vec3 eye(0.0f, 0.0f, 15.0f);
 vec3 cop(0.0f, 0.0f, 0.0f);
@@ -49,6 +54,8 @@ vector<ShaderInitializer> shaders;
 vector<Window> windows;
 vector<ILContainer> textures;
 vector<string> texture_file_names;
+
+bool displayBezier = false;
 
 void TestUpdateCube(struct Shape::Data & data , float current_time, void * blob)
 {
@@ -371,18 +378,19 @@ void DisplayDisc()
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 	glEnable(GL_DEPTH_TEST);
 
-	mat4 model_matrix = rotate(mat4() , radians(window->LocalTime() * 30.0f) , vec3(0.0f , 1.0f , 0.0f));
-	model_matrix = scale(model_matrix , vec3(3.0f , 3.0f , 3.0f));
+	mat4 model_matrix = rotate(mat4(), radians(window->LocalTime() * 40.0f), vec3(0.0f, 1.0f, 0.0f));
+	vec3* spline = cam.GetSpline();
+	vector<vec3> points = cam.GetTPoints();
+	vec3 lookat;
+	vec3 pos = cam.GetCameraPosition(lookat);
 
-	mat4 view_matrix = lookAt(vec3(0.0f , 0.0f , 8.0f) , vec3(0.0f , 0.0f , 0.0f) , vec3(0.0f , 1.0f , 0.0f));
-	
-	mat4 projection_matrix = perspective(radians(window->fovy) , window->aspect , window->near_distance , window->far_distance);
-	
-	phong_shader.Use(model_matrix , view_matrix , projection_matrix);
-	phong_shader.SetMaterial(diffuse , specular , 128.0f , ambient);
-	phong_shader.SetLightPosition(vec3(0.0f , 0.0f , 1000.0f));
-	phong_shader.SelectSubroutine(PhongShader::PHONG_WITH_TEXTURE);
-	phong_shader.EnableTexture(textures[2] , 0);
+	model_matrix = scale(model_matrix, vec3(3.0f, 3.0f, 3.0f));
+	mat4 view_matrix = lookAt(pos, lookat, vec3(0.0f, 1.0f, 0.0f));
+	mat4 projection_matrix = perspective(radians(window->fovy), window->aspect, .01f, window->far_distance);
+
+	phong_shader.Use(model_matrix, view_matrix, projection_matrix);
+	phong_shader.SetMaterial(diffuse, specular, 32.0f, ambient);
+	phong_shader.SetLightPosition(vec3(0.0f, 0.0f, 1000.0f));
 	disc3.Draw(false);
 	phong_shader.UnUse();
 
@@ -392,6 +400,32 @@ void DisplayDisc()
 		constant_shader.SetMaterial(diffuse , specular , 32.0f , vec3(1.0f , 1.0f , 1.0f));
 		disc3.Draw(true);
 		constant_shader.UnUse();
+	}
+
+	for (int i = 0; i < points.size(); i++)
+	{
+		vec3 displaySpline = points[i];
+		model_matrix = mat4();
+		model_matrix = translate(model_matrix, displaySpline);
+		phong_shader.Use(model_matrix, view_matrix, projection_matrix);
+		phong_shader.SetMaterial(diffuse, specular, 16.0f, ambient);
+		phong_shader.SetLightPosition(vec3(0.0f, 0.0f, 1000.0f));
+		if (displayBezier)
+			ring.Draw(false);
+		phong_shader.UnUse();
+	}
+
+	for (int i = 0; i < 4; i++)
+	{
+		vec3 displaySpline = spline[i];
+		model_matrix = mat4();
+		model_matrix = translate(model_matrix, displaySpline);
+		phong_shader.Use(model_matrix, view_matrix, projection_matrix);
+		phong_shader.SetMaterial(diffuse, specular, 16.0f, ambient);
+		phong_shader.SetLightPosition(vec3(0.0f, 0.0f, 1000.0f));
+		if (displayBezier)
+			ring.Draw(false);
+		phong_shader.UnUse();
 	}
 	glutSwapBuffers();
 	disc3.UpdateValues(TestUpdateDisc , window->LocalTime(), nullptr);
