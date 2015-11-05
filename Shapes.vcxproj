@@ -156,6 +156,7 @@
     <Text Include="icosphere_reference.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BezierCamera.h" />
     <ClInclude Include="constant_shader.h" />
     <ClInclude Include="constellation.h" />
     <ClInclude Include="cylinder.h" />
@@ -171,6 +172,7 @@
     <ClInclude Include="window.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="BezierCamera.cpp" />
     <ClCompile Include="constant_shader.cpp" />
     <ClCompile Include="cylinder.cpp" />
     <ClCompile Include="disc.cpp" />
