@@ -640,7 +640,7 @@ void DisplayCylinder()
 	phong_shader.Use(model_matrix, view_matrix, projection_matrix);
 	phong_shader.SetMaterial(diffuse, specular, 64.0f, ambient);
 	phong_shader.SetLightPosition(vec3(0.0f, 0.0f, 1000.0f));
-	phong_shader.SelectSubroutine(PhongShader::BASIC_PHONG);
+	phong_shader.SelectSubroutine(PhongShader::SHADER_TOY_1);
 	phong_shader.EnableTexture(textures[1], 0);
 	torus.Draw(false);
 	phong_shader.UnUse();
