@@ -85,23 +85,55 @@ vec4 PPLWithTexture()
 subroutine(color_t)
 vec4 ShaderToy1()
 {
-	// http://www.pouet.net/prod.php?which=57245
+//	// http://www.pouet.net/prod.php?which=57245
+//
+//	vec3 c;
+//	float l;
+//	float z= global_time;
+//
+//	for(int i=0;i<3;i++)
+//	{
+//		vec2 p = fs_in.T;
+//		vec2 uv = p;
+//		p -= 0.5;
+//		z +=.07;
+//		l = length(p);
+//		uv += p / l * (sin(z)+1.0) * abs(sin(l * 9.0 - z * 2.0));
+//		c[i] = 0.01/length(abs(mod(uv, 1.0) - 0.5));
+//	}
+//	return vec4(c / l, 1.0);
+// https://www.shadertoy.com/view/MdBGDK
+// By David Hoskins.
+    // Found this on GLSL sandbox. I really liked it, changed a few things and made it tileable.
+// :)
+// by David Hoskins.
 
-	vec3 c;
-	float l;
-	float z= global_time;
 
-	for(int i=0;i<3;i++)
-	{
-		vec2 p = fs_in.T;
-		vec2 uv = p;
-		p -= 0.5;
-		z +=.07;
-		l = length(p);
-		uv += p / l * (sin(z)+1.0) * abs(sin(l * 9.0 - z * 2.0));
-		c[i] = 0.01/length(abs(mod(uv, 1.0) - 0.5));
-	}
-	return vec4(c / l, 1.0);
+// Water turbulence effect by joltz0r 2013-07-04, improved 2013-07-07
+
+    //#define TAU 6.28318530718
+    float time = global_time * .5+23.0;
+    // uv should be the 0-1 uv of texture...
+    vec2 uv = fs_in.T;
+   
+
+    vec2 p = mod(uv * 6.28318530718, 6.28318530718)-250.0;
+    vec2 i = vec2(p);
+    float c = 1.0;
+    float inten = .005;
+
+    for (int n = 0; n < 5; n++)
+    {
+        float t = time * (1.0 - (3.5 / float(n+1)));
+        i = p + vec2(cos(t - i.x) + sin(t + i.y), sin(t - i.y) + cos(t + i.x));
+        c += 1.0 / length(vec2(p.x / (sin(i.x + t) / inten), p.y / (cos(i.y + t) / inten)));
+    }
+    c /= float(5);
+    c = 1.17-pow(c, 1.4);
+    vec3 colour = vec3(pow(abs(c), 8.0));
+    colour = clamp(colour + vec3(0.0, 0.35, 0.5), 0.0, 1.0);
+   
+    return vec4(colour / 1, 1.0);
 }
 
 void main(void)

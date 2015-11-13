@@ -46,17 +46,15 @@ void BezierCamera::generateNextSpline()
 	//The third and fourth points are semi-random. The camera shouldn't be moving too eratically so it will be somewhat limited. It also has to not pass through objects
 
 	//range from -5-20 on zvalue to encourage forward movement
-	float xVal = rand() % 150 - 75.f;
-	float yVal = rand() % 150 - 75.f;
-	float zVal = rand() % 150 - 75.f;
+	float xVal = rand() % 50 - 25.f;
+	float yVal = rand() % 50 - 25.f;
+	float zVal = rand() % 50 - 25.f;
 	nextSpline[2] = vec3(xVal, yVal, zVal);
 
-	cout << xVal << "," << yVal << "," << zVal << endl;
-
 	//range from -5-10 around nextspline[2]
-	xVal = rand() % 150 - 75.f;
-	yVal = rand() % 150 - 75.f;
-	zVal = rand() % 150 - 75.f;
+	xVal = rand() % 50 - 25.f;
+	yVal = rand() % 50 - 25.f;
+	zVal = rand() % 50 - 25.f;
 	nextSpline[3] = vec3(xVal, yVal, zVal);
 }
 
@@ -126,7 +124,6 @@ vec3 BezierCamera::GetCameraPosition(vec3& lookat)
 		dividedDistances[i] = distances[i] / distances[50];
 	}
 
-	cout << dividedDistances[0] << endl;
 	for (int i = 0; i < 99; i++)
 	{
 		if (bigT < dividedDistances[i])
@@ -138,11 +135,6 @@ vec3 BezierCamera::GetCameraPosition(vec3& lookat)
 			double denominator = dividedDistances[i] - dividedDistances[i - 1];
 
 			float t = (bigT / denominator) * (tAfter - tBefore);
-			//cout << t << endl;
-			if (t > 1)
-			{
-				cout << "" << endl;
-			}
 			cameraPos = linearInterpolate(currentSpline[0], currentSpline[1], currentSpline[2], currentSpline[3], t);
 			break;
 		}/*
@@ -177,17 +169,13 @@ vec3 BezierCamera::GetCameraPosition(vec3& lookat)
 				lookat = linearInterpolate(nextSpline[0], nextSpline[1], nextSpline[2], nextSpline[3], t - 1.f);
 
 			}
-			//cout << "lookat: " << t << endl;
 
 			lookat = (lookat - cameraPos) + cameraPos;
-			//cout << lookat.x << "," << lookat.y << "," << lookat.z << endl;
-
 			break;
 		}
 	}
 	bigT += bigTDelta;
 	diff = cameraPos - cameraPreviousPos;
-	cout << "Distance Travelled: " << sqrt(dot(diff, diff)) << endl;
 	if (bigT >= 1.0f)
 	{
 		currentSpline[0] = nextSpline[0];

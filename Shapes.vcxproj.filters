@@ -15,6 +15,9 @@
     <ClCompile Include="shader.cpp" />
     <ClCompile Include="shape.cpp" />
     <ClCompile Include="window.cpp" />
+    <ClCompile Include="open_cube_constellation.cpp" />
+    <ClCompile Include="closed_cube_constellation.cpp" />
+    <ClCompile Include="torus.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BezierCamera.h" />
@@ -31,6 +34,9 @@
     <ClInclude Include="shader.h" />
     <ClInclude Include="shape.h" />
     <ClInclude Include="window.h" />
+    <ClInclude Include="open_cube_constellation.h" />
+    <ClInclude Include="closed_cube_constellation.h" />
+    <ClInclude Include="torus.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ClassDiagram.cd" />

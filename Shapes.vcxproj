@@ -157,6 +157,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BezierCamera.h" />
+    <ClInclude Include="closed_cube_constellation.h" />
     <ClInclude Include="constant_shader.h" />
     <ClInclude Include="constellation.h" />
     <ClInclude Include="cylinder.h" />
@@ -165,14 +166,17 @@
     <ClInclude Include="ilcontainer.h" />
     <ClInclude Include="instance.h" />
     <ClInclude Include="my_freetype.h" />
+    <ClInclude Include="open_cube_constellation.h" />
     <ClInclude Include="phong_shader.h" />
     <ClInclude Include="plane.h" />
     <ClInclude Include="shader.h" />
     <ClInclude Include="shape.h" />
+    <ClInclude Include="torus.h" />
     <ClInclude Include="window.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="BezierCamera.cpp" />
+    <ClCompile Include="closed_cube_constellation.cpp" />
     <ClCompile Include="constant_shader.cpp" />
     <ClCompile Include="cylinder.cpp" />
     <ClCompile Include="disc.cpp" />
@@ -181,10 +185,12 @@
     <ClCompile Include="instance.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="my_freetype.cpp" />
+    <ClCompile Include="open_cube_constellation.cpp" />
     <ClCompile Include="phong_shader.cpp" />
     <ClCompile Include="plane.cpp" />
     <ClCompile Include="shader.cpp" />
     <ClCompile Include="shape.cpp" />
+    <ClCompile Include="torus.cpp" />
     <ClCompile Include="window.cpp" />
   </ItemGroup>
   <ItemGroup>

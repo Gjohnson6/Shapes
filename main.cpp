@@ -11,7 +11,11 @@
 #include "window.h"
 #include "my_freetype.h"
 #include "grid_constellation.h"
+#include "open_cube_constellation.h"
+#include "closed_cube_constellation.h"
 #include "BezierCamera.h"
+#include "torus.h"
+#include "glm\gtc\noise.hpp"
 
 
 using namespace std;
@@ -28,6 +32,9 @@ using namespace glm;
 #endif // USE_STEREO
 
 const int NUMBER_OF_OBJECTS = 512;
+int numShapesOptions[] = { 8, 26,56, 98, 152, 218, 296, 386, 488 };
+int shapeIndex = 0;
+int numShapes = 8;
 vector<Instance> instances;
 freetype::font_data our_font;
 
@@ -41,8 +48,11 @@ Plane plane1(8, 8);
 Plane plane2(64, 64);
 Cube cube;
 GridConstellation gc;
+OpenCubeConstellation occ;
+ClosedCubeConstellation ccc;
 BezierCamera cam;
 BezierCamera cam2;
+Torus torus(.5f, 1, 20, 20);
 
 vec3 eye(0.0f, 0.0f, 15.0f);
 vec3 cop(0.0f, 0.0f, 0.0f);
@@ -71,6 +81,11 @@ void TestUpdateCube(struct Shape::Data & data, float current_time, void * blob)
 		data.vertices[i + 16] = vec3(data.vertices[i + 16].x, delta + 2.0f, data.vertices[i + 16].z);
 		data.vertices[i + 20] = vec3(data.vertices[i + 20].x, -delta - 2.0f, data.vertices[i + 20].z);
 	}
+}
+
+void testUpdateTorus(struct Shape::Data & data, float current_time, void * blob)
+{
+	
 }
 
 void TestUpdatePlane(struct Shape::Data & data, float current_time, void * blob)
@@ -167,6 +182,14 @@ void KeyboardFunc(unsigned char c, int x, int y)
 
 	switch (c)
 	{
+	case '-':
+		shapeIndex > 0 ? shapeIndex-- : shapeIndex;
+		occ.Initialize(numShapesOptions[shapeIndex]);
+		break;
+	case '+':
+		shapeIndex < 8 ? shapeIndex++ : shapeIndex;
+		occ.Initialize(numShapesOptions[shapeIndex]);
+		break;
 	case 'n':
 		window->draw_normals = !window->draw_normals;
 		break;
@@ -200,17 +223,17 @@ void KeyboardFunc(unsigned char c, int x, int y)
 		window->is_paused = !window->is_paused;
 		break;
 
-	case '+':
-		window->fovy++;
-		if (window->fovy > 90.0f)
-			window->fovy = 90.0f;
-		break;
+	//case '+':
+	//	window->fovy++;
+	//	if (window->fovy > 90.0f)
+	//		window->fovy = 90.0f;
+	//	break;
 
-	case '-':
-		window->fovy--;
-		if (window->fovy < 2.0f)
-			window->fovy = 2.0f;
-		break;
+	//case '-':
+	//	window->fovy--;
+	//	if (window->fovy < 2.0f)
+	//		window->fovy = 2.0f;
+	//	break;
 
 	case 'w':
 		window->wireframe = !window->wireframe;
@@ -387,22 +410,22 @@ void DisplayDisc()
 	vec3 pos = cam.GetCameraPosition(lookat);
 
 	model_matrix = scale(model_matrix, vec3(3.0f, 3.0f, 3.0f));
-	mat4 view_matrix = lookAt(pos, lookat, vec3(0.0f, 1.0f, 0.0f));
+	mat4 view_matrix = lookAt(pos, vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, 1.0f, 0.0f));
 	mat4 projection_matrix = perspective(radians(window->fovy), window->aspect, .01f, window->far_distance);
 
 	phong_shader.Use(model_matrix, view_matrix, projection_matrix);
 	phong_shader.SetMaterial(diffuse, specular, 128.0f, ambient);
 	phong_shader.SetLightPosition(vec3(0.0f, 0.0f, 1000.0f));
-	phong_shader.SelectSubroutine(PhongShader::PHONG_WITH_TEXTURE);
+	phong_shader.SelectSubroutine(PhongShader::BASIC_PHONG);
 	phong_shader.EnableTexture(textures[2], 0);
-	disc3.Draw(false);
+	torus.Draw(false);
 	phong_shader.UnUse();
 
 	if (window->draw_normals)
 	{
 		constant_shader.Use(model_matrix, view_matrix, projection_matrix);
 		constant_shader.SetMaterial(diffuse, specular, 32.0f, vec3(1.0f, 1.0f, 1.0f));
-		disc3.Draw(true);
+		torus.Draw(true);
 		constant_shader.UnUse();
 	}
 
@@ -432,7 +455,7 @@ void DisplayDisc()
 		phong_shader.UnUse();
 	}
 	glutSwapBuffers();
-	disc3.UpdateValues(TestUpdateDisc, window->LocalTime(), nullptr);
+	torus.UpdateValues(testUpdateTorus, window->LocalTime(), (void *)&plane2.Dimensions());
 }
 
 void DisplayPlane()
@@ -461,20 +484,21 @@ void DisplayPlane()
 	phong_shader.Use(model_matrix, view_matrix, projection_matrix);
 	phong_shader.SetMaterial(diffuse, specular, 64.0f, ambient);
 	phong_shader.SetLightPosition(light_pos);
-	phong_shader.SelectSubroutine(PhongShader::PHONG_WITH_TEXTURE);
+	phong_shader.SelectSubroutine(PhongShader::SHADER_TOY_1);
 	phong_shader.EnableTexture(textures[0], 0);
-	plane2.Draw(false);
+	//plane2.Draw(false);
+	torus.Draw(false);
 	phong_shader.UnUse();
 
-	if (window->draw_normals)
-	{
-		constant_shader.Use(model_matrix, view_matrix, projection_matrix);
-		constant_shader.SetMaterial(diffuse, specular, 64.0f, vec3(1.0f, 1.0f, 1.0f));
-		plane2.Draw(true);
-		constant_shader.UnUse();
-	}
+	//if (window->draw_normals)
+	//{
+	//	constant_shader.Use(model_matrix, view_matrix, projection_matrix);
+	//	constant_shader.SetMaterial(diffuse, specular, 64.0f, vec3(1.0f, 1.0f, 1.0f));
+	//	plane2.Draw(true);
+	//	constant_shader.UnUse();
+	//}
 	glutSwapBuffers();
-	plane2.UpdateValues(TestUpdatePlane, window->LocalTime(), (void *)&plane2.Dimensions());
+	//plane2.UpdateValues(TestUpdatePlane, window->LocalTime(), (void *)&plane2.Dimensions());
 }
 
 void DisplayGrid()
@@ -495,10 +519,10 @@ void DisplayGrid()
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 	glEnable(GL_DEPTH_TEST);
 
-	vector<Constellation::PositionData> & pd = gc.GetPositionData();
+	vector<Constellation::PositionData> & pd = occ.GetPositionData();
 
-	mat4 s = scale(mat4(), vec3(50.0f, 50.0f, 1.0f));
-	//mat4 view_matrix = lookAt(vec3(0.0f, 0.0f, 150.0f), vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, 1.0f, 0.0f));
+	mat4 s = scale(mat4(), vec3(50.0f, 50.0f, 50.0f));
+	mat4 view_matrix = lookAt(vec3(0.0f, 0.0f, 150.0f), vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, 1.0f, 0.0f));
 	//mat4 projection_matrix = perspective(radians(window->fovy), window->aspect, window->near_distance, window->far_distance);
 
 
@@ -508,7 +532,7 @@ void DisplayGrid()
 	vec3 pos = cam.GetCameraPosition(lookat);
 
 	mat4 model_matrix = scale(model_matrix, vec3(3.0f, 3.0f, 3.0f));
-	mat4 view_matrix = lookAt(pos, lookat, vec3(0.0f, 1.0f, 0.0f));
+	//mat4 view_matrix = lookAt(pos, lookat, vec3(0.0f, 1.0f, 0.0f));
 	mat4 projection_matrix = perspective(radians(window->fovy), window->aspect, .01f, window->far_distance);
 
 
@@ -545,15 +569,15 @@ void DisplayGrid()
 		phong_shader.Use(model_matrix, view_matrix, projection_matrix);
 		phong_shader.SetMaterial(diffuse, specular, 64.0f, ambient);
 		phong_shader.SetLightPosition(vec3(0.0f, 0.0f, 1000.0f));
-		phong_shader.SelectSubroutine(PhongShader::PHONG_WITH_TEXTURE);
-		phong_shader.EnableTexture(textures[1], 0);
-		plane2.Draw(false);
+		phong_shader.SelectSubroutine(PhongShader::BASIC_PHONG);
+		//phong_shader.EnableTexture(textures[1], 0);
+		torus.Draw(false);
 		phong_shader.UnUse();
 		if (window->draw_normals)
 		{
 			constant_shader.Use(model_matrix, view_matrix, projection_matrix);
 			constant_shader.SetMaterial(diffuse, specular, 64.0f, vec3(1.0f, 1.0f, 1.0f));
-			plane2.Draw(true);
+			torus.Draw(true);
 			constant_shader.UnUse();
 		}
 		// Animate the rotation of the objects within the grid.
@@ -616,15 +640,15 @@ void DisplayCylinder()
 	phong_shader.Use(model_matrix, view_matrix, projection_matrix);
 	phong_shader.SetMaterial(diffuse, specular, 64.0f, ambient);
 	phong_shader.SetLightPosition(vec3(0.0f, 0.0f, 1000.0f));
-	phong_shader.SelectSubroutine(PhongShader::PHONG_WITH_TEXTURE);
+	phong_shader.SelectSubroutine(PhongShader::BASIC_PHONG);
 	phong_shader.EnableTexture(textures[1], 0);
-	cylinder2.Draw(false);
+	torus.Draw(false);
 	phong_shader.UnUse();
 	if (window->draw_normals)
 	{
 		constant_shader.Use(model_matrix, view_matrix, projection_matrix);
 		constant_shader.SetMaterial(diffuse, specular, 64.0f, vec3(1.0f, 1.0f, 1.0f));
-		cylinder2.Draw(true);
+		torus.Draw(true);
 		constant_shader.UnUse();
 	}
 	AdaptFreetype(our_font, scale(mat4(), vec3(0.01f, 0.01f, 0.01f)), lookAt(vec3(0.0f, 0.0f, 10.0f), vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, 1.0f, 0.0f)), perspective(radians(window->fovy), window->aspect, window->near_distance, window->far_distance), strings, -400, 0);
@@ -719,7 +743,7 @@ int main(int argc, char * argv[])
 	glutSetOption(GLUT_RENDERING_CONTEXT, GLUT_USE_CURRENT_CONTEXT);
 
 	// This is the grid constellation initialization. The preferred argument is n^2.
-	gc.Initialize(525);
+	occ.Initialize(numShapes);
 
 	// This vector is used to initialize all the window objects. 
 	//windows.push_back(Window("Basic Shape Viewer" , nullptr , nullptr , nullptr , nullptr , ivec2(512 , 512) , 50.0f , 1.0f , 100.0f));
