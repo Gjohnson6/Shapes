@@ -187,7 +187,7 @@ void Cube::NonGLTakeDown()
 
 void Plane::SE(vec3 * v, int row , int col , glm::vec3 & sum , float & divisor)
 {
-	vec3 a , b;
+	vec3 a , b, s;
 
 	if (row == this->divisionsY || col == this->divisionsX)
 		return;
@@ -195,13 +195,18 @@ void Plane::SE(vec3 * v, int row , int col , glm::vec3 & sum , float & divisor)
 	a = normalize(*(v + RIGHT) - *v);
 	b = normalize(*(v + DOWN) - *v);
 
-	sum += normalize(cross(a , b));
-	divisor++;
+	s = normalize(cross(a , b));
+
+	if (s == s)
+	{
+		sum += s;
+		divisor++;
+	}
 }
 
 void Plane::SSW(vec3 * v , int row , int col , glm::vec3 & sum , float & divisor)
 {
-	vec3 a , b;
+	vec3 a , b, s;
 
 	if (row == this->divisionsY || col == 0)
 		return;
@@ -209,13 +214,18 @@ void Plane::SSW(vec3 * v , int row , int col , glm::vec3 & sum , float & divisor
 	a = normalize(*(v + DOWN) - *v);
 	b = normalize(*(v + DOWN_LEFT) - *v);
 
-	sum += normalize(cross(a , b));
-	divisor++;
+	s = normalize(cross(a , b));
+
+	if (s == s)
+	{
+		sum += s;
+		divisor++;
+	}
 }
 
 void Plane::WSW(vec3 * v , int row , int col , glm::vec3 & sum , float & divisor)
 {
-	vec3 a , b;
+	vec3 a , b, s;
 
 	if (row == this->divisionsY || col == 0)
 		return;
@@ -223,13 +233,18 @@ void Plane::WSW(vec3 * v , int row , int col , glm::vec3 & sum , float & divisor
 	a = normalize(*(v + DOWN_LEFT) - *v);
 	b = normalize(*(v + LEFT) - *v);
 
-	sum += normalize(cross(a , b));
-	divisor++;
+	s = normalize(cross(a , b));
+
+	if (s == s)
+	{
+		sum += s;
+		divisor++;
+	}
 }
 
 void Plane::NW(vec3 * v , int row , int col , glm::vec3 & sum , float & divisor)
 {
-	vec3 a , b;
+	vec3 a , b, s;
 
 	if (row == 0 || col == 0)
 		return;
@@ -237,13 +252,18 @@ void Plane::NW(vec3 * v , int row , int col , glm::vec3 & sum , float & divisor)
 	a = normalize(*(v + LEFT) - *v);
 	b = normalize(*(v + UP) - *v);
 
-	sum += normalize(cross(a , b));
-	divisor++;
+	s = normalize(cross(a , b));
+
+	if (s == s)
+	{
+		sum += s;
+		divisor++;
+	}
 }
 
 void Plane::NNE(vec3 * v , int row , int col , glm::vec3 & sum , float & divisor)
 {
-	vec3 a , b;
+	vec3 a , b, s;
 
 	if (row == 0 || col == this->divisionsX)
 		return;
@@ -251,13 +271,18 @@ void Plane::NNE(vec3 * v , int row , int col , glm::vec3 & sum , float & divisor
 	a = normalize(*(v + UP) - *v);
 	b = normalize(*(v + UP_RIGHT) - *v);
 
-	sum += normalize(cross(a , b));
-	divisor++;
+	s = normalize(cross(a , b));
+
+	if (s == s)
+	{
+		sum += s;
+		divisor++;
+	}
 }
 
 void Plane::ENE(vec3 * v , int row , int col , glm::vec3 & sum , float & divisor)
 {
-	vec3 a , b;
+	vec3 a , b, s;
 
 	if (row == 0 || col == this->divisionsX)
 		return;
@@ -265,8 +290,13 @@ void Plane::ENE(vec3 * v , int row , int col , glm::vec3 & sum , float & divisor
 	a = normalize(*(v + UP_RIGHT) - *v);
 	b = normalize(*(v + RIGHT) - *v);
 
-	sum += normalize(cross(a , b));
-	divisor++;
+	s = normalize(cross(a , b));
+
+	if (s == s)
+	{
+		sum += s;
+		divisor++;
+	}
 }
 
 void Plane::RecomputeNormals()
@@ -375,4 +405,125 @@ void Cube::Draw(bool draw_normals)
 	}
 	glBindVertexArray(0);
 	this->GLReturnedError("Cube::Draw() - exiting");
+}
+
+Cylinder::Cylinder(int slices , int stacks , float span , float back_radius , float front_radius) : Plane(slices, stacks)
+{
+	float full_span = pi<float>() * 2.0f;
+
+	if (span == 0)
+		throw std::invalid_argument("bad span value");
+
+	if (stacks < 1)
+		throw std::invalid_argument("bad stack value");
+
+	if (back_radius == 0.0f && front_radius == 0.0f)
+		throw std::invalid_argument("bad radii");
+
+	if (abs(back_radius) <= 0.00001f)
+		back_radius = 0.00001f;
+
+	if (abs(front_radius) <= 0.00001f)
+		front_radius = 0.00001f;
+
+	this->slices = abs(slices);
+	this->stacks = stacks;
+	this->fr = front_radius;
+	this->br = back_radius;
+	this->span = min<float>(full_span , abs(span));
+	this->is_partial_span = this->span != full_span;
+}
+
+bool Cylinder::PreGLInitialize()
+{
+	// To correct for the difficulties in sharing end and beginning columns (wrap around)
+	// I am reimplementing cylinder as a plane so that left and right edges are unique vertices.
+
+	// Use the Plane implementation for making a flat plane.
+	this->Plane::PreGLInitialize();
+
+	// Now move the vertices into the shape of a cylinder.
+	float derivative;
+	vec3 z_axis(0.0f , 0.0f , 1.0f);
+	vec4 p(this->br , 0.0f , 0.0f , 1.0f);
+
+	// The t coordinate marches from -0.5 to 0.5 along z.
+	float t = 1.0f;
+	float delta_t = 1.0f / float(this->stacks);
+	vec3 delta_z(0.0f , 0.0f , delta_t);
+
+	// How far to advance between rings. 
+	// Rotation angle between slices.
+	float theta = this->span / float(this->slices);
+	mat4 m = translate(mat4() , vec3(0.0f , 0.0f , -0.5f));
+
+	vec3 * v = &this->data.vertices[0];
+	vec3 * vn = &this->data.normal_visualization_coordinates[0];
+	
+	derivative = fr - br;
+
+	for (int ring_index = 0; ring_index < this->stacks + 1; ring_index++)
+	{
+		// Mix from back radius to front radius to derive
+		// the x coordinate of the point used to project the
+		// surface.
+		p.x = mix(br , fr , t);
+		// Given the slope from back to front, compute normal angle.
+		float rho = atan(derivative);
+		//cout << rho / pi<float>() * 180.0f << endl;
+		vec4 rotated_y_axis = rotate(mat4() , -rho , vec3(0.0f , 1.0f , 0.0f)) * vec4(1.0f , 0.0f , 0.0f , 1.0f);
+
+		t -= delta_t;
+
+		// Reset m2 to nothing but back to front translation.
+		mat4 m2 = m;
+		mat4 m3;
+
+		for (int slice_index = 0; slice_index <= this->slices; slice_index++)
+		{
+			vec3 n = vec3(m3 * rotated_y_axis);
+			*(vn++) = *v = vec3(m2 * p);
+			*(vn++) = *v + n / this->NORMAL_LENGTH_DIVISOR;
+			m2 = rotate(m2 , -theta , z_axis);
+			m3 = rotate(m3 , -theta , z_axis);
+			v++;
+		}
+
+		m = translate(m , delta_z);
+	}
+	this->data.vbackup = this->data.vertices;
+
+	// Finally, rely upon the ultra cool RecomputeNormals from Plane to do all the hard work
+	// for initially setting the normals.
+	this->RecomputeNormals();
+	return true;
+}
+
+void Cylinder::RecomputeNormals()
+{
+	this->Plane::RecomputeNormals();
+
+	vector<vec3> & n = this->data.normals;
+	vector<vec3> & v = this->data.vertices;
+	vector<vec3> & vn = this->data.normal_visualization_coordinates;
+	int w = this->slices + 1;
+
+	if (!this->is_partial_span)
+	{
+		// Fix the normals of the first and last columns;
+		for (int ring_index = 0; ring_index < this->stacks + 1; ring_index++)
+		{
+			n[ring_index * w + this->slices] = n[ring_index * w + 0] = (n[ring_index * w + 0] + n[ring_index * w + this->slices]) / 2.0f;
+
+			vn[(ring_index * w + this->slices) * 2 + 0] = v[ring_index * w + this->slices];
+			vn[(ring_index * w + this->slices) * 2 + 1] = v[ring_index * w + this->slices] + vn[(ring_index * w + this->slices) * 2 + 0] / Shape::NORMAL_LENGTH_DIVISOR;
+
+			vn[(ring_index * w + 0) * 2 + 0] = v[ring_index * w + 0];
+			vn[(ring_index * w + 0) * 2 + 1] = v[ring_index * w + 0] + vn[(ring_index * w + 0) * 2 + 0] / Shape::NORMAL_LENGTH_DIVISOR;
+		}
+	}
+}
+
+void Cylinder::NonGLTakeDown()
+{
 }

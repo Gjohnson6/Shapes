@@ -17,10 +17,12 @@ public:
 
 	enum SubroutineIndices
 	{
-		CONSTANT = 0 ,
-		BASIC_PHONG = 1,
-		PHONG_WITH_TEXTURE = 2,
-		SHADER_TOY_1 = 3
+		CONSTANT,
+		BASIC_PHONG,
+		PHONG_WITH_TEXTURE,
+		SHADER_TOY_1,
+		VIGNETTE,
+		NUMBER_OF_SUBROUTINES
 	};
 
 

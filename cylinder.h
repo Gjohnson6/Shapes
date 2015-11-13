@@ -1,6 +1,8 @@
 #pragma once
 #include "shape.h"
 
+#if 0
+
 class Cylinder : public Shape
 {
 public:
@@ -18,3 +20,5 @@ protected:
 	float br;
 	bool is_partial_span;
 };
+
+#endif

@@ -8,6 +8,8 @@
 using namespace std;
 using namespace glm;
 
+#if 0
+
 Cylinder::Cylinder(int slices, int stacks, float span, float back_radius, float front_radius) : Shape()
 {
 	float full_span = pi<float>() * 2.0f;
@@ -208,3 +210,5 @@ void Cylinder::NonGLTakeDown()
 {
 
 }
+
+#endif

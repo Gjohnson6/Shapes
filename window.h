@@ -20,6 +20,9 @@ public:
 	static void PostAllRedisplays(std::vector<Window> & windows);
 	static void InitializeWindows(std::vector<Window> & windows , void(*DisplayFunc)(void) , void(*KeyboardFunc)(unsigned char , int , int) , void(*CloseFunc)(void) , void(*ReshapeFunc)(int , int) , void(*IdleFunc)());
 
+	void SetWindowTitle(std::string new_title) { this->SetWindowTitle(new_title.c_str()); }
+	void SetWindowTitle(char * new_title) { glutSetWindowTitle(new_title); }
+
 	void(*DisplayFunc)();
 	void(*KeyboardFunc)(unsigned char c , int x , int y);
 	void(*ReshapeFunc)(int w , int h);
