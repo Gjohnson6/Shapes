@@ -42,7 +42,7 @@ GridConstellation gc;
 OpenCubeConstellation occ;
 ClosedCubeConstellation ccc;
 BezierCamera cam;
-Torus torus(.5f, 1, 50, 100);
+Torus torus(.5f, 1, 50, 3);
 
 vec3 eye(0.0f, 0.0f, 15.0f);
 vec3 cop(0.0f, 0.0f, 0.0f);
@@ -240,11 +240,7 @@ void DisplayTorus()
 	vector<vec3> points = cam.GetTPoints();
 	vec3 lookat;
 	vec3 pos = cam.GetCameraPosition(lookat);
-
 	mat4 s = scale(mat4(), vec3(50.0f, 50.0f, 50.0f));
-	//vec3 lookat;//This will be where the camera is looking
-	//vec3 pos = cam.GetCameraPosition(lookat);//This is the camera's position
-
 	mat4 model_matrix = scale(model_matrix, vec3(3.0f, 3.0f, 3.0f));
 	mat4 view_matrix = lookAt(pos, lookat, vec3(0.0f, 1.0f, 0.0f));
 	mat4 projection_matrix = perspective(radians(window->fovy), window->aspect, .01f, window->far_distance);
@@ -345,16 +341,7 @@ void DisplayGrid()
 
 	mat4 s = scale(mat4(), vec3(50.0f, 50.0f, 50.0f));
 	mat4 view_matrix = lookAt(vec3(0.0f, 0.0f, 150.0f), vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, 1.0f, 0.0f));
-	//mat4 projection_matrix = perspective(radians(window->fovy), window->aspect, window->near_distance, window->far_distance);
-
-
-	vec3* spline = cam.GetSpline();
-	vector<vec3> points = cam.GetTPoints();
-	vec3 lookat;
-	vec3 pos = cam.GetCameraPosition(lookat);
-
 	mat4 model_matrix = scale(model_matrix, vec3(3.0f, 3.0f, 3.0f));
-	//mat4 view_matrix = lookAt(pos, lookat, vec3(0.0f, 1.0f, 0.0f));
 	mat4 projection_matrix = perspective(radians(window->fovy), window->aspect, .01f, window->far_distance);
 
 	mat4 r = rotate(mat4(), radians(window->LocalTime() * 0.0f), vec3(0.0f, 1.0f, 0.0f));
@@ -400,32 +387,6 @@ void DisplayGrid()
 		}
 		// Animate the rotation of the objects within the grid.
 		(*iter).outward_direction_vector = vec3(r * vec4((*iter).outward_direction_vector, 1.0f));
-	}
-
-	for (int i = 0; i < points.size(); i++)
-	{
-		vec3 displaySpline = points[i];
-		model_matrix = mat4();
-		model_matrix = translate(model_matrix, displaySpline);
-		phong_shader.Use(model_matrix, view_matrix, projection_matrix);
-		phong_shader.SetMaterial(diffuse, specular, 16.0f, ambient);
-		phong_shader.SetLightPosition(vec3(0.0f, 0.0f, 1000.0f));
-		if (displayBezier)
-			ring.Draw(false);
-		phong_shader.UnUse();
-	}
-
-	for (int i = 0; i < 4; i++)
-	{
-		vec3 displaySpline = spline[i];
-		model_matrix = mat4();
-		model_matrix = translate(model_matrix, displaySpline);
-		phong_shader.Use(model_matrix, view_matrix, projection_matrix);
-		phong_shader.SetMaterial(diffuse, specular, 16.0f, ambient);
-		phong_shader.SetLightPosition(vec3(0.0f, 0.0f, 1000.0f));
-		if (displayBezier)
-			ring.Draw(false);
-		phong_shader.UnUse();
 	}
 	glutSwapBuffers();
 }
