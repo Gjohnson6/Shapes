@@ -11,6 +11,7 @@ uniform mat4 mv_matrix;
 uniform mat4 view_matrix;
 uniform mat4 proj_matrix;
 uniform mat3 normal_matrix;
+uniform float global_time;
 
 // These are outputs of the vertex shader. They will
 // arrive as inputs to the fragment shader after having
@@ -31,6 +32,6 @@ void main(void)
 	vs_out.P = vec3(mv_matrix * vec4(position, 1.0));
 	vs_out.C = color;
 	vs_out.T = vec2(textures.x, 1.0 - textures.y);
-
+	
 	gl_Position = proj_matrix * mv_matrix * vec4(position, 1.0);
 }

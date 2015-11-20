@@ -27,7 +27,6 @@ bool Torus::PreGLInitialize()
 	float sphi, cphi;//sin and cos of phi
 	vec3 vertex;
 	vec3 normal;
-	vec2 texture(-1.0f, 1.0f);
 
 	//Increment number of sides to allow for one more point than the surface
 	sides++;
@@ -43,7 +42,7 @@ bool Torus::PreGLInitialize()
 		spsi = sin(psi);
 		phi = 0.0f;
 
-		vec2 tc(j / float(this->rings), 0.0f);
+		vec2 tc(j / float(this->rings - 1 ), 0.0f);//Texture coordinate
 
 		for (int i = 0; i < sides; i++)
 		{
@@ -61,11 +60,8 @@ bool Torus::PreGLInitialize()
 			this->data.normal_visualization_coordinates.push_back(*(this->data.vertices.end() - 1) + *(this->data.normals.end() - 1) / this->NORMAL_LENGTH_DIVISOR * vec3(-1, -1, -1));
 
 			phi += dphi;
-			texture.x = texture.x + dpsi;
 		}
 
-		texture.x = -1.0f;
-		texture.y = texture.y + dphi;
 		psi += dpsi;
 	}
 	int w = sides;
@@ -97,101 +93,5 @@ void Torus::NonGLTakeDown()
 
 void Torus::RecomputeNormals()
 {
-	vector<vec3> & v = data.vertices;
-	vector<vec3> & n = data.normals;
-	vector<vec3> & p = data.normal_visualization_coordinates;
-	vec3 A;
-	vec3 B;
-	vec3 C;
-	vec3 D;
-	vec3 sum;
-	int index = 0;
-	for (int j = 0; j < this->rings; j++)
-	{
-
-		for (int i = 0; i < this->sides; i++, index++)
-		{
-			if (j != this->rings - 1)
-			{
-				if (i == this->sides - 1)//If it's the last vertex in a ring (which is the same position as the first)
-				{
-					if (index - this->sides < 0)
-					{
-
-					}
-					n[index] = n[index - this->sides + 1];
-					p[index * 2 + 0] = p[(index - this->sides + 1) * 2 + 0];
-					p[index * 2 + 1] = p[(index - this->sides + 1) * 2 + 1];
-				}
-				else
-				{
-					sum = vec3(0.0f);
-					int vert = (j * this->sides + i);
-					int indexA = vert + 1;
-					int indexB = (vert + this->sides);
-
-					A = (v[indexA] - v[vert]);
-					B = (v[indexB] - v[vert]);
-					sum += normalize(cross(B, A ));
-
-					indexB = indexA;
-					indexA = vert - (this->sides) + 1;
-					if (indexA < 0)
-					{
-						indexA = this->data.vertices.size() - this->sides + indexA;//Need to subtract this->sides to skip the last ring, which is the same as the first
-						//can't use % because it works differently with negative numbers
-					}
-
-					A = (v[indexA] - v[vert]);
-					B = (v[indexB] - v[vert]);
-					sum += normalize(cross(A, B));
-
-					indexB = indexA;
-					indexA = vert - this->sides;
-					if (indexA < 0)
-					{
-						indexA = this->data.vertices.size() - this->sides + indexA;																				   
-					}
-
-					A = (v[indexA] - v[vert]);
-					B = (v[indexB] - v[vert]);
-					sum += normalize(cross(A, B));
-					indexB = indexA;
-					indexA = i == 0 ? vert + this->sides - 2 : vert - 1;//this is the point to the 'left' of vert. If vert is 0, the point is sides - 2, otherwise it would be the last point
-
-					A = (v[indexA] - v[vert]);
-					B = (v[indexB] - v[vert]);
-					sum += normalize(cross(A, B));
-
-					indexB = indexA;
-					indexA = i == 0 ? (vert + (this->sides * 2) - 2) : vert + this->sides - 1;
-
-					A = (v[indexA] - v[vert]);
-					B = (v[indexB] - v[vert]);
-					sum += normalize(cross(A, B));
-
-					indexB = indexA;
-					indexA = (vert + this->sides);
-
-					A = (v[indexA] - v[vert]);
-					B = (v[indexB] - v[vert]);
-					sum += normalize(cross(A, B));
-					
-					n[index] = - sum / 6.0f;
-					p[index * 2 + 0] = v[index];
-					p[index * 2 + 1] = v[index] + n[index] / - 8.0f;
-				}
-			}
-			else//last ring is the same as the first
-			{
-				n[index] = n[i];
-				p[index * 2 + 0] = p[i * 2 + 0];
-				p[index * 2 + 1] = p[i * 2 + 1];
-			}
-		}
-	
-	}
-
-
 }
 

@@ -14,11 +14,11 @@
 class Window
 {
 public:
-	Window(char * window_name, void(*DisplayFunc)() , void(*KeyboardFunc)(unsigned char c , int x , int y) , void(*ReshapeFunc)(int w , int h), void (*CloseFunc)(), glm::ivec2 size, float fovy, float near_distance, float far_distance);
+	Window(char * window_name, void(*DisplayFunc)() , void(*KeyboardFunc)(unsigned char c , int x , int y), void(*SpecialFunc)(int, int, int), void(*ReshapeFunc)(int w , int h), void (*CloseFunc)(), glm::ivec2 size, float fovy, float near_distance, float far_distance);
 
 	static Window * FindCurrentWindow(std::vector<Window> & windows);
 	static void PostAllRedisplays(std::vector<Window> & windows);
-	static void InitializeWindows(std::vector<Window> & windows , void(*DisplayFunc)(void) , void(*KeyboardFunc)(unsigned char , int , int) , void(*CloseFunc)(void) , void(*ReshapeFunc)(int , int) , void(*IdleFunc)());
+	static void InitializeWindows(std::vector<Window> & windows , void(*DisplayFunc)(void) , void(*KeyboardFunc)(unsigned char , int , int), void(*SpecialFunc)(int, int, int), void(*CloseFunc)(void) , void(*ReshapeFunc)(int , int) , void(*IdleFunc)());
 
 	void SetWindowTitle(std::string new_title) { this->SetWindowTitle(new_title.c_str()); }
 	void SetWindowTitle(char * new_title) { glutSetWindowTitle(new_title); }
@@ -27,6 +27,7 @@ public:
 	void(*KeyboardFunc)(unsigned char c , int x , int y);
 	void(*ReshapeFunc)(int w , int h);
 	void(*CloseFunc)();
+	void(*SpecialFunc)(int i, int x, int y);
 
 	static float UpdateTime()
 	{
@@ -56,6 +57,7 @@ public:
 	float time_spent_paused;
 	float time_when_paused;
 	bool is_paused;
+	int shaderNum;
 
 private:
 	static float current_time;

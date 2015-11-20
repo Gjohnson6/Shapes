@@ -25,7 +25,7 @@ private:
 	void generateNextSpline();
 	void findtValues();
 	vec3 lerp(vec3& p1, vec3& p2, float& t);
-	vec3 linearInterpolate(vec3 & firstPoint, vec3 & secondPoint, vec3 & thirdPoint, vec3 & fourthPoint, float t);
+	vec3 deCastleJau(vec3 & firstPoint, vec3 & secondPoint, vec3 & thirdPoint, vec3 & fourthPoint, float t, vec3 & lookat);
 	void GetSmallTs(vec3 & t1, vec3 & t2);
 
 	float bigT = 0.f;

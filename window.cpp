@@ -2,11 +2,12 @@
 
 float Window::current_time;
 
-Window::Window(char * window_name,  void(*DisplayFunc)() , void(*KeyboardFunc)(unsigned char c , int x , int y) , void(*ReshapeFunc)(int w , int h) , void(*CloseFunc)() , glm::ivec2 size , float fovy , float near_distance , float far_distance)
+Window::Window(char * window_name,  void(*DisplayFunc)() , void(*KeyboardFunc)(unsigned char c , int x , int y), void(*SpecialFunc)(int, int, int), void(*ReshapeFunc)(int w , int h) , void(*CloseFunc)() , glm::ivec2 size , float fovy , float near_distance , float far_distance)
 {
 	this->window_name = window_name;
 	this->DisplayFunc = DisplayFunc;
 	this->KeyboardFunc = KeyboardFunc;
+	this->SpecialFunc = SpecialFunc;
 	this->ReshapeFunc = ReshapeFunc;
 	this->CloseFunc = CloseFunc;
 	this->size = size;
@@ -19,6 +20,7 @@ Window::Window(char * window_name,  void(*DisplayFunc)() , void(*KeyboardFunc)(u
 	this->time_spent_paused = 0.0f;
 	this->is_paused = false;
 	this->handle = BAD_GL_VALUE;
+	this->shaderNum = 4;
 }
 
 Window * Window::FindCurrentWindow(std::vector<Window> & windows)
@@ -45,7 +47,7 @@ void Window::PostAllRedisplays(std::vector<Window> & windows)
 	}
 }
 
-void Window::InitializeWindows(std::vector<Window> & windows, void(*DisplayFunc)(void) , void(*KeyboardFunc)(unsigned char , int , int) , void(*CloseFunc)(void) , void(*ReshapeFunc)(int , int) , void(*IdleFunc)())
+void Window::InitializeWindows(std::vector<Window> & windows, void(*DisplayFunc)(void) , void(*KeyboardFunc)(unsigned char , int , int), void(*SpecialFunc)(int, int, int), void(*CloseFunc)(void) , void(*ReshapeFunc)(int , int) , void(*IdleFunc)())
 {
 	for (unsigned int i = 0; i < windows.size(); i++)
 	{
@@ -57,6 +59,7 @@ void Window::InitializeWindows(std::vector<Window> & windows, void(*DisplayFunc)
 		glutCloseFunc(CloseFunc);
 		glutDisplayFunc(DisplayFunc);
 		glutKeyboardFunc(KeyboardFunc);
+		glutSpecialFunc(SpecialFunc);
 		if (i == 0)
 		{
 			//glutTimerFunc(1000 / 60 , TimerFunc , 1000 / 60);

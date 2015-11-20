@@ -32,6 +32,7 @@ uniform float global_time;
 
 vec3 light_position = vec3(0.0, 0.0, 100.0);
 
+const float RAINBOW_SPLINE_SIZE = 6.0;
 subroutine(color_t)
 vec4 Constant()
 {
@@ -154,6 +155,7 @@ float perlinNoise3( in vec3 p )
     return mix(dy1, dy2, u.z);
 }
 
+
 /**
  * Performs a fractal sum of the same noise function for different 'frequencies'.
  * @return: noise value in the range [0.0, ~1.94/2)
@@ -182,80 +184,48 @@ float pattern( in vec3 p )
       return fractalSumNoise3( p + 4.0*q );
   }
 
+
 subroutine(color_t)
 vec4 ShaderToy1()
 {
-//	// http://www.pouet.net/prod.php?which=57245
-//
-//	vec3 c;
-//	float l;
-//	float z= global_time;
-//
-//	for(int i=0;i<3;i++)
-//	{
-//		vec2 p = fs_in.T;
-//		vec2 uv = p;
-//		p -= 0.5;
-//		z +=.07;
-//		l = length(p);
-//		uv += p / l * (sin(z)+1.0) * abs(sin(l * 9.0 - z * 2.0));
-//		c[i] = 0.01/length(abs(mod(uv, 1.0) - 0.5));
-//	}
-//	return vec4(c / l, 1.0);
-// https://www.shadertoy.com/view/MdBGDK
-// By David Hoskins.
-    // Found this on GLSL sandbox. I really liked it, changed a few things and made it tileable.
-// :)
-// by David Hoskins.
+	//Water turbulence effect by joltz0r 2013-07-04, improved 2013-07-07
+	//https://www.shadertoy.com/view/MdlXz8
+    float time = global_time * .5+23.0;
+    // uv should be the 0-1 uv of texture...
+    vec2 uv = fs_in.T;
+   
 
+    vec2 p = mod(uv * 6.28318530718, 6.28318530718)-250.0;
+    vec2 i = vec2(p);
+    float c = 1.0;
+    float inten = .005;
 
-// Water turbulence effect by joltz0r 2013-07-04, improved 2013-07-07
-//
-//    //#define TAU 6.28318530718
-//    float time = global_time * .5+23.0;
-//    // uv should be the 0-1 uv of texture...
-//    vec2 uv = fs_in.T;
-//   
-//
-//    vec2 p = mod(uv * 6.28318530718, 6.28318530718)-250.0;
-//    vec2 i = vec2(p);
-//    float c = 1.0;
-//    float inten = .005;
-//
-//    for (int n = 0; n < 5; n++)
-//    {
-//        float t = time * (1.0 - (3.5 / float(n+1)));
-//        i = p + vec2(cos(t - i.x) + sin(t + i.y), sin(t - i.y) + cos(t + i.x));
-//        c += 1.0 / length(vec2(p.x / (sin(i.x + t) / inten), p.y / (cos(i.y + t) / inten)));
-//    }
-//    c /= float(5);
-//    c = 1.17-pow(c, 1.4);
-//    vec3 colour = vec3(pow(abs(c), 8.0));
-//    colour = clamp(colour + vec3(0.0, 0.35, 0.5), 0.0, 1.0);
-//   
-//    return vec4(colour / 1, 1.0);
+    for (int n = 0; n < 5; n++)
+    {
+        float t = time * (1.0 - (3.5 / float(n+1)));
+        i = p + vec2(cos(t - i.x) + sin(t + i.y), sin(t - i.y) + cos(t + i.x));
+        c += 1.0 / length(vec2(p.x / (sin(i.x + t) / inten), p.y / (cos(i.y + t) / inten)));
+    }
+    c /= float(5);
+    c = 1.17-pow(c, 1.4);
+    vec3 colour = vec3(pow(abs(c), 8.0));
+    colour = clamp(colour + vec3(0.0, 0.35, 0.5), 0.0, 1.0);
+   
+    return vec4(colour / 1, 1.0);
+}
 
-
+subroutine(color_t)
+vec4 ShaderToy2()
+{
+	//From Shadertoy.com: https://www.shadertoy.com/view/llX3Rn
 	vec2 uv = fs_in.T;
 
-    // TODO: Add code to create your texture based on perline noise.
-    // Some idea's:
-    // * Start with visualizing the fractal sum and play around with the number of iterations and factors.
-    // * Experiment with coloring the noise texture based on the noise value. (Use for example a spline: https://www.shadertoy.com/view/MdBXzG)
-    // * Experiment using different coordinates in the perlinNoise function.
-    // * Experiment with creating your own hash function.
-    // * Experiment with creating a 3D animated noise texture.
-    // * Experiment with using domain warping: http://www.iquilezles.org/www/articles/warp/warp.htm
-    // * Experiment with combining raymarching and 3D solid texturing like in the marble example: https://www.shadertoy.com/view/ldjSz3
-    
 	return vec4(pattern(vec3(5.0*uv,0.5+0.5*sin(0.3*global_time))),
                         pattern(vec3(5.0*uv,0.5+0.5*cos(0.3*global_time))),
                         pattern(vec3(0.5+0.5*sin(0.3*global_time),5.0*uv)),
                         1.0);
 
 }
-const float RAINBOW_SPLINE_SIZE = 6.0;
-
 void main(void)
 {
 	FragColor = ColorMode();

@@ -14,15 +14,9 @@ BezierCamera::BezierCamera()
 	tPoints.resize(101);
 	for (int i = 0; i < 4; i++)
 	{
-		previousSpline[i].z = rand() % 150 - 75.f;
 		currentSpline[i].z = rand() % 150 - 75.f;
-		nextSpline[i].z = rand() % 150 - 75.f;		
-		previousSpline[i].x = rand() % 150 - 75.f;
 		currentSpline[i].x = rand() % 150 - 75.f;
-		nextSpline[i].x = rand() % 150 - 75.f;		
-		previousSpline[i].y = rand() % 150 - 75.f;
 		currentSpline[i].y = rand() % 150 - 75.f;
-		nextSpline[i].y = rand() % 150 - 75.f;
 	}
 
 	//This will start the random path
@@ -46,15 +40,15 @@ void BezierCamera::generateNextSpline()
 	//The third and fourth points are semi-random. The camera shouldn't be moving too eratically so it will be somewhat limited. It also has to not pass through objects
 
 	//range from -5-20 on zvalue to encourage forward movement
-	float xVal = rand() % 50 - 25.f;
-	float yVal = rand() % 50 - 25.f;
-	float zVal = rand() % 50 - 25.f;
+	float xVal = rand() % 150 - 75.f;
+	float yVal = rand() % 150 - 75.f;
+	float zVal = rand() % 150 - 75.f;
 	nextSpline[2] = vec3(xVal, yVal, zVal);
 
 	//range from -5-10 around nextspline[2]
-	xVal = rand() % 50 - 25.f;
-	yVal = rand() % 50 - 25.f;
-	zVal = rand() % 50 - 25.f;
+	xVal = rand() % 150 - 75.f;
+	yVal = rand() % 150 - 75.f;
+	zVal = rand() % 150 - 75.f;
 	nextSpline[3] = vec3(xVal, yVal, zVal);
 }
 
@@ -63,13 +57,12 @@ void BezierCamera::findtValues()
 	for (int i = 0; i <= 50; i++)
 	{
 		littleT = i / 50.f;
-
-		tPoints.at(i) = linearInterpolate(currentSpline[0], currentSpline[1], currentSpline[2], currentSpline[3], littleT);
-		tPoints.at(i + 50) = linearInterpolate(nextSpline[0], nextSpline[1], nextSpline[2], nextSpline[3], littleT);
+		tPoints.at(i) = deCastleJau(currentSpline[0], currentSpline[1], currentSpline[2], currentSpline[3], littleT, vec3(0,0,0));
+		tPoints.at(i + 50) = deCastleJau(nextSpline[0], nextSpline[1], nextSpline[2], nextSpline[3], littleT, vec3(0,0,0));
 	}
 	littleT = 0.f;
 }
-vec3 BezierCamera::linearInterpolate(vec3 & firstPoint, vec3 & secondPoint, vec3 & thirdPoint, vec3 & fourthPoint, float t)
+vec3 BezierCamera::deCastleJau(vec3 & firstPoint, vec3 & secondPoint, vec3 & thirdPoint, vec3 & fourthPoint, float t, vec3 & lookat)
 {
 	vec3 p1 = this->lerp(firstPoint, secondPoint, t);
 	vec3 p2 = this->lerp(secondPoint, thirdPoint, t);
@@ -77,6 +70,7 @@ vec3 BezierCamera::linearInterpolate(vec3 & firstPoint, vec3 & secondPoint, vec3
 								 
 	vec3 p4 = this->lerp(p1, p2, t);
 	vec3 p5 = this->lerp(p2, p3, t);
+	lookat = p5;
 								 
 	vec3 p6 = this->lerp(p4, p5, t);
 	return p6;
@@ -103,6 +97,7 @@ void BezierCamera::GetSmallTs(vec3& t1, vec3& t2)
 
 }
 
+//This function updates the camera position and returns it and the point where the camera will be looking
 vec3 BezierCamera::GetCameraPosition(vec3& lookat)
 {
 	cameraPreviousPos = cameraPos;
@@ -135,45 +130,11 @@ vec3 BezierCamera::GetCameraPosition(vec3& lookat)
 			double denominator = dividedDistances[i] - dividedDistances[i - 1];
 
 			float t = (bigT / denominator) * (tAfter - tBefore);
-			cameraPos = linearInterpolate(currentSpline[0], currentSpline[1], currentSpline[2], currentSpline[3], t);
-			break;
-		}/*
-		else if (bigT == dividedDistances[i])
-		{
-			cameraPos = tPoints[i];
-
-			break;
-		}*/
-	}
-
-	float secondPoint = bigT + bigTDelta * 100;
-	
-	for (int i = 0; i < 100; i++)
-	{
-		if (secondPoint < dividedDistances[i])
-		{
-			float tBefore = dividedDistances[i - 1];
-			float tAfter = dividedDistances[i];
-			float numerator = secondPoint - (secondPoint - bigTDelta);
-			float denominator = dividedDistances[i] - dividedDistances[i - 1];
-
-			float t = (secondPoint / denominator) * (tAfter - tBefore);
-			if (t <= 1)
-			{
-				lookat = linearInterpolate(currentSpline[0], currentSpline[1], currentSpline[2], currentSpline[3], t);
-			}
-			else
-			{//Need separate delta for nextSpline
-				float secondTDelta = .05f / distances[99];//change to 100, size needs to be 101
-				//figure out how many 'steps' past 1 secondPointis, multiply that by secondTDelta, add to 1. That is bigT.
-				lookat = linearInterpolate(nextSpline[0], nextSpline[1], nextSpline[2], nextSpline[3], t - 1.f);
-
-			}
-
-			lookat = (lookat - cameraPos) + cameraPos;
+			cameraPos = deCastleJau(currentSpline[0], currentSpline[1], currentSpline[2], currentSpline[3], t, lookat);
 			break;
 		}
 	}
+
 	bigT += bigTDelta;
 	diff = cameraPos - cameraPreviousPos;
 	if (bigT >= 1.0f)
