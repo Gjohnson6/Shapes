@@ -48,6 +48,26 @@ void PhongShader::EnableTexture(ILContainer & ilcontainer , GLuint texture_unit)
 	glEnable(GL_TEXTURE_2D);
 }
 
+void PhongShader::SetBandHeights(float * bandHeights)
+{
+	assert(this->is_used == true);
+
+	GLfloat v[32] = { 0 };
+	for (int i = 0; i < 32; i++)
+	{
+		v[i] = bandHeights[i];
+	}
+
+	glUniform1fv(this->uniforms.band_heights, 32, v);
+}
+
+void PhongShader::SetOpacity(float opacity)
+{
+	assert(this->is_used == true);
+
+	glUniform1f(uniforms.opacity, opacity);
+}
+
 void PhongShader::SelectSubroutine(int subroutine_index)
 {
 	assert(this->is_used == true);
@@ -83,6 +103,8 @@ void PhongShader::CustomSetup()
 	uniforms.projection_matrix = glGetUniformLocation(this->program_id , "proj_matrix");
 	uniforms.base_texture_location = glGetUniformLocation(this->program_id , "base_texture");
 	uniforms.global_time = glGetUniformLocation(this->program_id , "global_time");
+	uniforms.band_heights = glGetUniformLocation(this->program_id, "band_heights");
+	uniforms.opacity = glGetUniformLocation(this->program_id, "opacity");
 	this->subroutine_indices.push_back(glGetSubroutineIndex(this->program_id , GL_FRAGMENT_SHADER, "Constant"));
 	this->subroutine_indices.push_back(glGetSubroutineIndex(this->program_id , GL_FRAGMENT_SHADER, "PerPixelLighting"));
 	this->subroutine_indices.push_back(glGetSubroutineIndex(this->program_id , GL_FRAGMENT_SHADER , "PPLWithTexture"));

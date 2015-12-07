@@ -17,7 +17,13 @@
 #include "torus.h"
 #include "glm\gtc\noise.hpp"
 #include <vector>
-
+#include <sndfile.h>
+#include <sndfile.hh>
+#include <stdio.h>
+#include <fftw3.h>
+#include <algorithm>
+#include <math.h>
+#include <portaudio.h>
 
 using namespace std;
 using namespace glm;
@@ -32,10 +38,20 @@ using namespace glm;
 #define	DISPLAY_MODE	(GLUT_RGBA | GLUT_DEPTH | GLUT_DOUBLE)
 #endif // USE_STEREO
 
+struct AudioData
+{
+	SNDFILE *sndFile = NULL;
+	SF_INFO sfInfo;
+	int position = 0;
+};
+
+AudioData aData;
+
 const int NUMBER_OF_OBJECTS = 512;
 int numShapesOptions[] = { 8, 26,56, 98, 152, 218, 296, 386 };
 int shapeIndex = 0;
 int numShapes = 8;
+float seekDelta = 0;//This will determine how far to seek through the .wav file per frame 
 vector<Instance> instances;
 Disc ring(64, pi<float>() * 2.0f, 0.25f, 0.24f);
 GridConstellation gc;
@@ -43,6 +59,8 @@ OpenCubeConstellation occ;
 ClosedCubeConstellation ccc;
 BezierCamera cam;
 Torus torus(.5f, 1, 50, 3);
+Plane plane(5, 5);
+int textureIndex = 0;
 
 vec3 eye(0.0f, 0.0f, 15.0f);
 vec3 cop(0.0f, 0.0f, 0.0f);
@@ -54,6 +72,8 @@ vector<ShaderInitializer> shaders;
 vector<Window> windows;
 vector<ILContainer> textures;
 vector<string> texture_file_names;
+int ramp = 0;
+int pastTime = 0;
 
 bool displayBezier = false;
 
@@ -275,7 +295,7 @@ void DisplayTorus()
 		phong_shader.Use(model_matrix, view_matrix, projection_matrix);
 		phong_shader.SetMaterial(diffuse, specular, 64.0f, ambient);
 		phong_shader.SetLightPosition(vec3(0.0f, 0.0f, 1000.0f));
-		phong_shader.SelectSubroutine(window->shaderNum);
+		phong_shader.SelectSubroutine(PhongShader::VIGNETTE);
 		phong_shader.EnableTexture(textures[1], 0);
 		torus.Draw(false);
 		phong_shader.UnUse();
@@ -376,7 +396,7 @@ void DisplayGrid()
 		phong_shader.SetLightPosition(vec3(0.0f, 0.0f, 1000.0f));
 		phong_shader.SelectSubroutine(window->shaderNum);
 		//phong_shader.EnableTexture(textures[1], 0);
-		torus.Draw(false);
+		plane.Draw(false);
 		phong_shader.UnUse();
 		if (window->draw_normals)
 		{
@@ -391,8 +411,103 @@ void DisplayGrid()
 	glutSwapBuffers();
 }
 
+int Callback(const void *input,
+	void *output,
+	unsigned long frameCount,
+	const PaStreamCallbackTimeInfo* paTimeInfo,
+	PaStreamCallbackFlags statusFlags,
+	void *userData)
+{
+
+	AudioData *data = (AudioData *)userData; /* we passed a data structure
+										 into the callback so we have something to work with */
+	int *cursor; /* current pointer into the output  */
+	int *out = (int *)output;
+	int thisSize = frameCount;
+	int thisRead;
+
+
+	cursor = out; /* set the output cursor to the beginning */
+	while (thisSize > 0)
+	{
+		/* seek to our current file position */
+		sf_seek(data->sndFile, data->position, SEEK_SET);
+
+		/* are we going to read past the end of the file?*/
+		if (thisSize > (data->sfInfo.frames - data->position))
+		{
+			/*if we are, only read to the end of the file*/
+			thisRead = data->sfInfo.frames - data->position;
+			/* and then loop to the beginning of the file */
+			data->position = 0;
+		}
+		else
+		{
+			/* otherwise, we'll just fill up the rest of the output buffer */
+			thisRead = thisSize;
+			/* and increment the file position */
+			data->position += thisRead;
+		}
+
+		/* since our output format and channel interleaving is the same as
+		sf_readf_int's requirements */
+		/* we'll just read straight into the output buffer */
+		sf_readf_int(data->sndFile, cursor, thisRead);
+		/* increment the output cursor*/
+		cursor += thisRead;
+		/* decrement the number of samples left to process */
+		thisSize -= thisRead;
+	}
+
+	return paContinue;
+
+}
+
+
+
 void DisplaySingleTorus()
 {
+	double samples[1024];//1024 samples
+	int currentTime = glutGet(GLUT_ELAPSED_TIME);
+
+	float seekScale = (currentTime - pastTime) / 16.6f;
+	cout << seekScale << endl;
+	pastTime = currentTime;
+	aData.position += seekScale * (seekDelta); 
+	
+	sf_seek(aData.sndFile, aData.position, SEEK_SET);
+	sf_read_double(aData.sndFile, samples, 1024);
+	fftw_complex out[513];
+	fftw_plan p;
+	
+	p = fftw_plan_dft_r2c_1d(1024, samples, out, FFTW_ESTIMATE);
+
+	fftw_execute(p);
+	fftw_destroy_plan(p);
+
+	float array[32] = { 0 };
+
+	for (int i = 0; i < 32; i++)
+	{
+		/*for (int j = 0; j < 2; j++)
+		{
+			array[i] += sqrt(out[2 * i + j][0] * out[2 * i + j][0] + out[2 * i + j][1] * out[2 * i + j][1]);
+
+		}*/
+
+		array[i] = sqrt(out[i][0] * out[i][0] + out[i][1] * out[i][1]);
+		
+		array[i] = array[i] / 100;
+		for (int j = 0; j < array[i]; j++)
+		{
+			cout << "-";
+		}
+		cout << endl;
+
+
+	}
+	cout << "Percent: " << (aData.position / (float)aData.sfInfo.frames) * 100 << endl;
+	system("CLS");
 	Window * window = Window::FindCurrentWindow(windows);
 	if (window->handle == BAD_GL_VALUE)
 		return;
@@ -410,7 +525,9 @@ void DisplaySingleTorus()
 	glClearColor(crimson.r, crimson.g, crimson.b, crimson.a);
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 	glEnable(GL_DEPTH_TEST);
-	mat4 model_matrix = rotate(mat4(), radians(window->LocalTime() * 30.0f), vec3(0.0f, 1.0f, 0.0f));
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	mat4 model_matrix = mat4();// rotate(mat4(), radians(window->LocalTime() * 30.0f), vec3(0.0f, 1.0f, 0.0f));
 	model_matrix = scale(model_matrix, vec3(3.0f, 3.0f, 3.0f));
 
 	mat4 view_matrix = lookAt(vec3(0.0f, 0.0f, 10.0f), vec3(0.0f, 0.0f, 0.0f), vec3(0.0f, 1.0f, 0.0f));
@@ -419,15 +536,41 @@ void DisplaySingleTorus()
 	phong_shader.SetMaterial(diffuse, specular, 64.0f, ambient);
 	phong_shader.SetLightPosition(vec3(0.0f, 0.0f, 1000.0f));
 	phong_shader.SetGlobalTime(Window::CurrentTime());
-	phong_shader.SelectSubroutine(window->shaderNum);
-	phong_shader.EnableTexture(textures[1], 0);
-	torus.Draw(false);
+	phong_shader.SelectSubroutine(PhongShader::VIGNETTE);
+	phong_shader.EnableTexture(textures[textureIndex], 0);
+	
+	float opacity = 1.f;
+	
+	double test = fmod(float(glutGet(GLUT_ELAPSED_TIME) / 1000.f), 10.0);
+	
+	if (test < 1)
+	{
+		if (ramp > 0)
+		{
+			//change texture
+			textureIndex = rand() % 4;
+			//phong_shader.EnableTexture(textures[rand() % 4], 0);
+		}
+		ramp = -1;
+		opacity = test;
+	}
+	else if (test > 9)
+	{
+		ramp = 1;
+		opacity = 10 - test;
+	}
+	//array[16] = test;
+	phong_shader.SetOpacity(opacity);
+	phong_shader.SetBandHeights(array);
+	cout << opacity << endl;
+
+	plane.Draw(false);
 	phong_shader.UnUse();
 	if (window->draw_normals)
 	{
 		constant_shader.Use(model_matrix, view_matrix, projection_matrix);
 		constant_shader.SetMaterial(diffuse, specular, 64.0f, vec3(1.0f, 1.0f, 1.0f));
-		torus.Draw(true);
+		plane.Draw(true);
 		constant_shader.UnUse();
 	}
 	glutSwapBuffers();
@@ -478,7 +621,7 @@ bool InitializeTextures()
 		{
 			cerr << "Failed to load texture: " << texture_file_names[i] << endl;
 			return false;
-		}
+		} 
 	}
 	// Then, enable texturing, bind texture unit, bind texture and away you go.
 	return true;
@@ -486,10 +629,80 @@ bool InitializeTextures()
 
 int main(int argc, char * argv[])
 {
+	
+	aData.sfInfo.format = 0;
+	aData.sndFile = sf_open("Movement_II.wav", SFM_READ, &aData.sfInfo);//Open .wav file
+	sf_perror(aData.sndFile);//Check for any errors
+	//sf_count_t count = sf_seek(aData.sndFile, 10000, SEEK_CUR);
+
+	//AudioData *data = (AudioData *)malloc(sizeof(AudioData));
+	//PaStream *stream;
+	//PaError error;
+	//PaStreamParameters outputParameters;
+
+	///* initialize our data structure */
+	//data->position = 0;
+	//data->sfInfo.format = 0;
+	///* try to open the file */
+	//data->sndFile = sf_open("song.wav", SFM_READ, &data->sfInfo);
+
+
+	//if (!data->sndFile)
+	//{
+	//	printf("error opening file\n");
+	//	return 1;
+	//}
+
+	///* start portaudio */
+	//Pa_Initialize();
+
+
+	///* set the output parameters */
+	//outputParameters.device = Pa_GetDefaultOutputDevice(); /* use the
+	//													   default device */
+	//outputParameters.channelCount = data->sfInfo.channels; /* use the
+	//													   same number of channels as our sound file */
+	//outputParameters.sampleFormat = paInt32; /* 32bit int format */
+	//outputParameters.suggestedLatency = 0.2; /* 200 ms ought to satisfy
+	//										 even the worst sound card */
+	//outputParameters.hostApiSpecificStreamInfo = 0; /* no api specific data */
+
+	//												/* try to open the output */
+	//error = Pa_OpenStream(&stream,  /* stream is a 'token' that we need
+	//								to save for future portaudio calls */
+	//	0,  /* no input */
+	//	&outputParameters,
+	//	data->sfInfo.samplerate,  /* use the same
+	//							  sample rate as the sound file */
+	//	paFramesPerBufferUnspecified,  /* let
+	//								   portaudio choose the buffersize */
+	//	paNoFlag,  /* no special modes (clip off, dither off) */
+	//	Callback,  /* callback function defined above */
+	//	data); /* pass in our data structure so the
+	//		   callback knows what's up */
+
+	//		   /* if we can't open it, then bail out */
+	//if (error)
+	//{
+	//	printf("error opening output, error code = %i\n", error);
+	//	Pa_Terminate();
+	//	return 1;
+	//}
+
+	/* when we start the stream, the callback starts getting called */
+	//Pa_StartStream(stream);
+	//Pa_Sleep(2000); /* pause for 2 seconds (2000ms) so we can hear a bit
+	//				of the output */
+	//Pa_StopStream(stream); // stop the stream
+	//Pa_Terminate(); // and shut down portaudio
+	
+	seekDelta = aData.sfInfo.samplerate / 60.f;
+	
 	srand(unsigned int(time(NULL)));
 
 	// glutInit must be the first thing to use OpenGL
 	glutInit(&argc, argv);
+
 
 	// Initializes the Develeoper's Imaging Library. This is the library that will be used to load images in different formats
 	// for use as textures. This library is old - others are better in some ways but unusable in others.
@@ -518,8 +731,8 @@ int main(int argc, char * argv[])
 	// This vector is used to initialize all the window objects. 
 	//windows.push_back(Window("Basic Shape Viewer" , nullptr , nullptr , nullptr , nullptr , ivec2(512 , 512) , 50.0f , 1.0f , 100.0f));
 	windows.push_back(Window("Torus", DisplaySingleTorus, nullptr, nullptr, nullptr, nullptr, ivec2(512, 512), 50.0f, 1.0f, 100.0f));
-	windows.push_back(Window("Closed Constellation", DisplayGrid, nullptr, nullptr, nullptr, nullptr, ivec2(512, 512), 50.0f, 1.0f, 400.0f));
-	windows.push_back(Window("Open Constellation", DisplayTorus, nullptr, nullptr, nullptr, nullptr, ivec2(512, 512), 50.0f, 1.0f, 400.0f));
+	//windows.push_back(Window("Closed Constellation", DisplayGrid, nullptr, nullptr, nullptr, nullptr, ivec2(512, 512), 50.0f, 1.0f, 400.0f));
+	//windows.push_back(Window("Open Constellation", DisplayTorus, nullptr, nullptr, nullptr, nullptr, ivec2(512, 512), 50.0f, 1.0f, 400.0f));
 	Window::InitializeWindows(windows, DisplayFunc, KeyboardFunc, SpecialFunc, CloseFunc, ReshapeFunc, IdleFunc);
 
 	// This must be called AFTER an OpenGL context has been built.
@@ -553,10 +766,12 @@ int main(int argc, char * argv[])
 	glutFullScreen();
 #endif
 
+	pastTime = glutGet(GLUT_ELAPSED_TIME);
 	glutMainLoop();
 
 	ShaderInitializer::TakeDown(&shaders);
 	ILContainer::TakeDown(textures);
+	sf_close(aData.sndFile);
 	return 0;
 }
 

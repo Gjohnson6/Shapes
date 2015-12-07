@@ -14,6 +14,8 @@ public:
 	void CustomSetup();
 	void SetGlobalTime(float global_time);
 	void EnableTexture(ILContainer & ilcontainer , GLuint texture_unit);
+	void SetBandHeights(float* bandHeights);
+	void SetOpacity(float opacity);
 
 	enum SubroutineIndices
 	{
@@ -42,6 +44,8 @@ private:
 		GLuint light_position;
 		GLuint base_texture_location;
 		GLuint global_time;
+		GLuint band_heights;
+		GLuint opacity;
 	} uniforms;
 
 	std::vector<GLuint> subroutine_indices;

@@ -24,7 +24,8 @@ uniform vec3 diffuse_albedo;
 uniform vec3 specular_albedo;
 uniform float specular_power;
 uniform vec3 ambient;
-
+uniform float band_heights[32];
+uniform float opacity;
 uniform sampler2D base_texture;
 
 // A global time value as needed by many of the shader toy shaders.
@@ -63,30 +64,58 @@ vec4 PerPixelLighting()
 subroutine(color_t)
 vec4 PPLWithTextureAndVignette()
 {
-	vec3 diffuse2 = vec3(texture(base_texture, fs_in.T));
-	vec3 N2 = fs_in.N;
+//	vec3 diffuse2 = vec3(texture(base_texture, fs_in.T));
+//	vec3 N2 = fs_in.N;
+//
+//	vec2 dc = abs(vec2(0.5, 0.5) - fs_in.T);
+//	float d = length(dc) - 0.4;
+//	float dimming = 1.0;
+//
+//	if (d > 0)
+//	{
+//		dimming = smoothstep(1.0, 0.0, d * 4.0);
+//	}
+//
+//	if (!gl_FrontFacing)
+//	{
+//		N2 = -N2;
+//	}
+//	vec3 n = normalize(N2);
+//	vec3 s = normalize(light_position - fs_in.P);
+//	vec3 v = normalize(-fs_in.P);
+//	vec3 r = reflect(-s, n);
+//	vec3 diffuse = max(dot(s, n), 0.0) * diffuse2 * dimming;
+//	vec3 specular = pow(max(dot(r, v), 0.0), specular_power) * specular_albedo;
+//
+//	return vec4(ambient + diffuse + specular, 1.0);
 
-	vec2 dc = abs(vec2(0.5, 0.5) - fs_in.T);
-	float d = length(dc) - 0.4;
-	float dimming = 1.0;
+    vec4 texture = vec4(vec3(texture(base_texture, fs_in.T)), opacity);
+    vec2 p = fs_in.T;
+    vec4 result;
+    float x_pos_in_hex = floor(p.x * 32.);
 
-	if (d > 0)
-	{
-		dimming = smoothstep(1.0, 0.0, d * 4.0);
-	}
+    //Color
+    vec4 white = vec4((1. + sin(global_time + x_pos_in_hex)),
+              (1. + asin(global_time + x_pos_in_hex)),
+              (1. + cos(global_time + x_pos_in_hex)),
+			  1.f);
 
-	if (!gl_FrontFacing)
-	{
-		N2 = -N2;
-	}
-	vec3 n = normalize(N2);
-	vec3 s = normalize(light_position - fs_in.P);
-	vec3 v = normalize(-fs_in.P);
-	vec3 r = reflect(-s, n);
-	vec3 diffuse = max(dot(s, n), 0.0) * diffuse2 * dimming;
-	vec3 specular = pow(max(dot(r, v), 0.0), specular_power) * specular_albedo;
+    //Band
+    int xPosition_16 = int(p.x * 32);
 
-	return vec4(ambient + diffuse + specular, 1.0);
+    //Height
+    float restraint = band_heights[xPosition_16];
+    //restraint *= 2.;
+    if (p.y > 1 - restraint)
+    {
+        result = vec4(vec3((texture * opacity) * white), 1.f);
+    }
+    else
+    {
+        result = texture;
+    }
+   
+    return vec4(result);
 }
 
 subroutine(color_t)
