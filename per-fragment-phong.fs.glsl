@@ -23,6 +23,7 @@ in VS_OUT
 uniform vec3 diffuse_albedo;
 uniform vec3 specular_albedo;
 uniform float specular_power;
+uniform float opacity = 1.0;
 uniform vec3 ambient;
 
 uniform sampler2D base_texture;
@@ -36,7 +37,7 @@ const float RAINBOW_SPLINE_SIZE = 6.0;
 subroutine(color_t)
 vec4 Constant()
 {
-	return vec4(ambient, 1.0);
+	return vec4(ambient, opacity);
 }
 
 subroutine(color_t)
@@ -57,42 +58,14 @@ vec4 PerPixelLighting()
 	vec3 diffuse = max(dot(s, n), 0.0) * diffuse2;
 	vec3 specular = pow(max(dot(r, v), 0.0), specular_power) * specular_albedo;
 
-	return vec4(ambient + diffuse + specular, 1.0);
-}
-
-subroutine(color_t)
-vec4 PPLWithTextureAndVignette()
-{
-	vec3 diffuse2 = vec3(texture(base_texture, fs_in.T));
-	vec3 N2 = fs_in.N;
-
-	vec2 dc = abs(vec2(0.5, 0.5) - fs_in.T);
-	float d = length(dc) - 0.4;
-	float dimming = 1.0;
-
-	if (d > 0)
-	{
-		dimming = smoothstep(1.0, 0.0, d * 4.0);
-	}
-
-	if (!gl_FrontFacing)
-	{
-		N2 = -N2;
-	}
-	vec3 n = normalize(N2);
-	vec3 s = normalize(light_position - fs_in.P);
-	vec3 v = normalize(-fs_in.P);
-	vec3 r = reflect(-s, n);
-	vec3 diffuse = max(dot(s, n), 0.0) * diffuse2 * dimming;
-	vec3 specular = pow(max(dot(r, v), 0.0), specular_power) * specular_albedo;
-
-	return vec4(ambient + diffuse + specular, 1.0);
+	return vec4(ambient + diffuse + specular, opacity);
 }
 
 subroutine(color_t)
 vec4 PPLWithTexture()
 {
-	vec3 diffuse2 = vec3(texture(base_texture, fs_in.T));
+	vec4 t = texture(base_texture, fs_in.T);
+	vec3 diffuse2 = vec3(t);
 	vec3 N2 = fs_in.N;
 
 	if (!gl_FrontFacing)
@@ -106,8 +79,8 @@ vec4 PPLWithTexture()
 	vec3 diffuse = max(dot(s, n), 0.0) * diffuse2;
 	vec3 specular = pow(max(dot(r, v), 0.0), specular_power) * specular_albedo;
 
-	return vec4(ambient + diffuse + specular, 1.0);
-		//vec4(fs_in.T.t, fs_in.T.t, fs_in.T.t, 0); // 
+	return vec4(vec3(ambient + diffuse + specular), t.a * opacity);
+			//vec4(fs_in.T.t, fs_in.T.t, fs_in.T.t, 0); // 
 }
 
 /**

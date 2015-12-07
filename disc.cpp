@@ -225,8 +225,13 @@ void Disc::Draw(bool draw_normals)
 	}
 	else
 	{
+		GLint winding;
+		glGetIntegerv(GL_FRONT_FACE , &winding);
+		if (is_fan)
+			glFrontFace(GL_CCW);
 		glBindVertexArray(this->vertex_array_handle);
 		glDrawElements(this->is_fan ? GL_TRIANGLE_FAN : GL_TRIANGLES, this->data.indices.size(), GL_UNSIGNED_INT, nullptr);
+		glFrontFace(winding);
 	}
 	glBindVertexArray(0);
 	this->GLReturnedError("Disc::Draw() - exiting");

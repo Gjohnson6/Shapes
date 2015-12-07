@@ -58,6 +58,9 @@ public:
 	float time_when_paused;
 	bool is_paused;
 	int shaderNum;
+	bool instructions;
+	bool full_screen;
+	bool blur;
 
 private:
 	static float current_time;

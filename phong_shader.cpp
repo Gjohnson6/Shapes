@@ -69,14 +69,22 @@ void PhongShader::SetGlobalTime(float global_time)
 	glUniform1f(uniforms.global_time , global_time);
 }
 
+void PhongShader::SetOpacity(float opacity)
+{
+	assert(this->is_used == true);
+	glUniform1f(uniforms.opacity , opacity);
+}
 void PhongShader::CustomSetup()
 {
 	Shader::Use();
-	uniforms.light_position = glGetUniformLocation(this->program_id, "light_position");
+	uniforms.param1 = glGetUniformLocation(this->program_id , "param1");
+	uniforms.param2 = glGetUniformLocation(this->program_id , "param2");
+	uniforms.light_position = glGetUniformLocation(this->program_id , "light_position");
 	uniforms.diffuse_albedo = glGetUniformLocation(this->program_id, "diffuse_albedo");
 	uniforms.specular_albedo = glGetUniformLocation(this->program_id, "specular_albedo");
 	uniforms.specular_power = glGetUniformLocation(this->program_id, "specular_power");
 	uniforms.ambient = glGetUniformLocation(this->program_id, "ambient");
+	uniforms.opacity = glGetUniformLocation(this->program_id , "opacity");
 	uniforms.modelview_matrix = glGetUniformLocation(this->program_id , "mv_matrix");
 	uniforms.view_matrix = glGetUniformLocation(this->program_id , "view_matrix");
 	uniforms.normal_matrix = glGetUniformLocation(this->program_id , "normal_matrix");
@@ -99,4 +107,11 @@ void PhongShader::SetMaterial(glm::vec3 diffuse_albedo, glm::vec3 specular_albed
 	glUniform3fv(uniforms.specular_albedo, 1, (GLfloat *)(&specular_albedo));
 	glUniform3fv(uniforms.diffuse_albedo, 1, (GLfloat *)(&diffuse_albedo));
 	glUniform3fv(uniforms.ambient, 1, (GLfloat *)(&ambient));
+}
+
+void PhongShader::SetParameters(float p1 , float p2)
+{
+	glUniform1f(uniforms.param1 , p1);
+	glUniform1f(uniforms.param2 , p2);
+
 }

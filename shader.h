@@ -20,6 +20,7 @@ Updates:	10/4/2015		Rolling into generic shape builders.
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include "ilcontainer.h"
+#include "fbo.h"
 
 class Shader
 {

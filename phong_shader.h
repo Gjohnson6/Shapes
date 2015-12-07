@@ -9,11 +9,13 @@ public:
 	void Use(glm::mat4 &model_matrix, glm::mat4 &view_matrix, glm::mat4 &projection_matrix);
 	void UnUse();
 	void SetMaterial(glm::vec3 diffuse_albedo, glm::vec3 specular_albedo, float specular_power, glm::vec3 ambient);
+	void SetParameters(float p1 , float p2);
 	void SetLightPosition(glm::vec3 light_position);
 	void SelectSubroutine(int subroutine_index);
 	void CustomSetup();
 	void SetGlobalTime(float global_time);
 	void EnableTexture(ILContainer & ilcontainer , GLuint texture_unit);
+	void SetOpacity(float opacity);
 
 	enum SubroutineIndices
 	{
@@ -42,6 +44,9 @@ private:
 		GLuint light_position;
 		GLuint base_texture_location;
 		GLuint global_time;
+		GLuint opacity;
+		GLuint param1;
+		GLuint param2;
 	} uniforms;
 
 	std::vector<GLuint> subroutine_indices;

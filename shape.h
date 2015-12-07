@@ -8,6 +8,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/constants.hpp>
+#include <glm/gtc/noise.hpp>
 
 #ifndef BAD_GL_VALUE
 #define	BAD_GL_VALUE	(GLuint(-1))

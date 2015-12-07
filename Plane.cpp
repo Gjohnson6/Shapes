@@ -516,10 +516,10 @@ void Cylinder::RecomputeNormals()
 			n[ring_index * w + this->slices] = n[ring_index * w + 0] = (n[ring_index * w + 0] + n[ring_index * w + this->slices]) / 2.0f;
 
 			vn[(ring_index * w + this->slices) * 2 + 0] = v[ring_index * w + this->slices];
-			vn[(ring_index * w + this->slices) * 2 + 1] = v[ring_index * w + this->slices] + vn[(ring_index * w + this->slices) * 2 + 0] / Shape::NORMAL_LENGTH_DIVISOR;
+			vn[(ring_index * w + this->slices) * 2 + 1] = v[ring_index * w + this->slices] + n[ring_index * w + this->slices] / Shape::NORMAL_LENGTH_DIVISOR;
 
 			vn[(ring_index * w + 0) * 2 + 0] = v[ring_index * w + 0];
-			vn[(ring_index * w + 0) * 2 + 1] = v[ring_index * w + 0] + vn[(ring_index * w + 0) * 2 + 0] / Shape::NORMAL_LENGTH_DIVISOR;
+			vn[(ring_index * w + 0) * 2 + 1] = v[ring_index * w + 0] + n[ring_index * w + 0] / Shape::NORMAL_LENGTH_DIVISOR;
 		}
 	}
 }

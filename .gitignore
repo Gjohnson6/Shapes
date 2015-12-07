@@ -51,3 +51,7 @@ Debug/vc140.idb
 freeglut.dll
 *.dll
 *.vcxproj
+*.bak
+Plane-8087pkivolowitz.cpp
+Plane-fenway.cpp
+Plane-Tesla.cpp

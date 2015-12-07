@@ -15,10 +15,13 @@ Window::Window(char * window_name,  void(*DisplayFunc)() , void(*KeyboardFunc)(u
 	this->near_distance = near_distance;
 	this->far_distance = far_distance;
 	this->wireframe = false;
+	this->instructions = true;
 	this->draw_normals = false;
 	this->time_when_paused = 0.0f;
 	this->time_spent_paused = 0.0f;
+	this->full_screen = false;
 	this->is_paused = false;
+	this->blur = false;
 	this->handle = BAD_GL_VALUE;
 	this->shaderNum = 4;
 }

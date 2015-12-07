@@ -158,10 +158,11 @@
   <ItemGroup>
     <ClInclude Include="BezierCamera.h" />
     <ClInclude Include="closed_cube_constellation.h" />
+    <ClInclude Include="blurshader.h" />
     <ClInclude Include="constant_shader.h" />
     <ClInclude Include="constellation.h" />
-    <ClInclude Include="cylinder.h" />
     <ClInclude Include="disc.h" />
+    <ClInclude Include="fbo.h" />
     <ClInclude Include="grid_constellation.h" />
     <ClInclude Include="ilcontainer.h" />
     <ClInclude Include="instance.h" />
@@ -177,9 +178,10 @@
   <ItemGroup>
     <ClCompile Include="BezierCamera.cpp" />
     <ClCompile Include="closed_cube_constellation.cpp" />
+    <ClCompile Include="blurshader.cpp" />
     <ClCompile Include="constant_shader.cpp" />
-    <ClCompile Include="cylinder.cpp" />
     <ClCompile Include="disc.cpp" />
+    <ClCompile Include="fbo.cpp" />
     <ClCompile Include="grid_constellation.cpp" />
     <ClCompile Include="ilcontainer.cpp" />
     <ClCompile Include="instance.cpp" />
@@ -194,7 +196,8 @@
     <ClCompile Include="window.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="ClassDiagram.cd" />
+    <None Include="blur.fs.glsl" />
+    <None Include="blur.vs.glsl" />
     <None Include="constant.fs.glsl" />
     <None Include="constant.vs.glsl" />
     <None Include="per-fragment-phong.fs.glsl" />
